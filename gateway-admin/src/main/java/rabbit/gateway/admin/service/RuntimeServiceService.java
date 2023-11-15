@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.transaction.annotation.Transactional;
+import rabbit.gateway.common.ServiceContext;
 import rabbit.gateway.common.entity.Service;
 import rabbit.gateway.common.event.DeleteServiceEvent;
 import rabbit.gateway.common.event.ReloadServiceEvent;
@@ -20,6 +21,9 @@ public class RuntimeServiceService {
 
     @Autowired
     protected EventService eventService;
+
+    @Autowired
+    protected ServiceContext serviceContext;
 
     /**
      * 新增
@@ -48,7 +52,6 @@ public class RuntimeServiceService {
                     return eventService.addEvent(new ReloadServiceEvent(service.getCode()))
                             .flatMap(e -> template.update(s));
                 }).switchIfEmpty(Mono.defer(() -> Mono.error(new GateWayException("服务不存在"))));
-
     }
 
     /**
@@ -57,21 +60,20 @@ public class RuntimeServiceService {
      * @return
      */
     @Transactional
-    public Mono<Void> deleteService(String serviceCode) {
-          return eventService.addEvent(new DeleteServiceEvent(serviceCode))
+    public Mono<Integer> deleteService(String serviceCode) {
+        return eventService.addEvent(new DeleteServiceEvent(serviceCode))
                 .flatMap(e -> template.delete(Query.query(where("code").is(serviceCode)),
-                        Service.class)).then();
-
+                        Service.class));
     }
 
     /**
-     * 删除服务
+     * 查询服务
+     *
      * @param serviceCode
      * @return
      */
-    @Transactional
     public Mono<Service> queryService(String serviceCode) {
-          return template.selectOne(Query.query(where("code").is(serviceCode)), Service.class);
-
+        Service service = serviceContext.getService(serviceCode);
+        return null == service ? Mono.empty() : Mono.just(service);
     }
 }

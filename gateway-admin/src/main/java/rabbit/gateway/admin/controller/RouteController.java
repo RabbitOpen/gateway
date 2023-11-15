@@ -1,12 +1,17 @@
 package rabbit.gateway.admin.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import rabbit.gateway.admin.service.RouteService;
 import rabbit.gateway.common.entity.Route;
 import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/route")
 public class RouteController {
+
+    @Autowired
+    private RouteService routeService;
 
     /**
      * 新增路由
@@ -15,7 +20,7 @@ public class RouteController {
      */
     @PostMapping("/add")
     public Mono<Route> add(@RequestBody Route route) {
-        return Mono.empty();
+        return routeService.add(route);
     }
 
     /**
@@ -25,7 +30,7 @@ public class RouteController {
      */
     @PostMapping("/update")
     public Mono<Route> update(@RequestBody Route route) {
-        return Mono.empty();
+        return routeService.update(route);
     }
 
     /**
@@ -34,8 +39,8 @@ public class RouteController {
      * @return
      */
     @PostMapping("/delete/{routeCode}")
-    public Mono<Route> delete(@PathVariable("routeCode") String routeCode) {
-        return Mono.empty();
+    public Mono<Integer> delete(@PathVariable("routeCode") String routeCode) {
+        return routeService.delete(routeCode);
     }
 
     /**
@@ -43,8 +48,8 @@ public class RouteController {
      * @param routeCode
      * @return
      */
-    @PostMapping("/query/{routeCode}")
+    @GetMapping("/query/{routeCode}")
     public Mono<Route> query(@PathVariable("routeCode") String routeCode) {
-        return Mono.empty();
+        return routeService.query(routeCode);
     }
 }

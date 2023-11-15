@@ -49,7 +49,7 @@ public class ServiceController {
      * @return
      */
     @PostMapping("/delete/{serviceCode}")
-    public Mono<Void> delete(@PathVariable("serviceCode") String serviceCode) {
+    public Mono<Integer> delete(@PathVariable("serviceCode") String serviceCode) {
         return rss.deleteService(serviceCode);
     }
 }
