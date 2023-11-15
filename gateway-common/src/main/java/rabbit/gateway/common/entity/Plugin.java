@@ -3,6 +3,7 @@ package rabbit.gateway.common.entity;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 import rabbit.gateway.common.BaseEntity;
+import rabbit.gateway.common.PluginName;
 import rabbit.gateway.common.PluginType;
 import rabbit.gateway.common.Schema;
 
@@ -16,7 +17,7 @@ public class Plugin extends BaseEntity {
      * 插件名
      */
     @Column("name")
-    private String name;
+    private PluginName name;
 
     /**
      * 插件类型
@@ -33,14 +34,14 @@ public class Plugin extends BaseEntity {
     /**
      * 插件的schema
      */
-    @Column("schema")
+    @Column("plugin_schema")
     private Schema schema;
 
-    public String getName() {
+    public PluginName getName() {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(PluginName name) {
         this.name = name;
     }
 

@@ -10,6 +10,7 @@ import rabbit.gateway.common.context.PluginContext;
 import rabbit.gateway.common.context.PrivilegeContext;
 import rabbit.gateway.common.context.RouteContext;
 import rabbit.gateway.common.context.ServiceContext;
+import rabbit.gateway.common.entity.Plugin;
 import rabbit.gateway.common.entity.Privilege;
 import rabbit.gateway.common.entity.Route;
 import rabbit.gateway.common.entity.Service;
@@ -41,15 +42,20 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
      */
     private Map<String, Privilege> privilegeCache = new ConcurrentHashMap<>(1024);
 
+    /**
+     * 插件链缓存
+     */
+    private Map<String, PluginChain> pluginChainCache = new ConcurrentHashMap<>(1024);
+
     @Autowired
     protected R2dbcEntityTemplate template;
 
     @Override
     public void reloadService(String serviceCode) {
-        logger.info("service[{}] is loaded!", serviceCode);
         template.selectOne(Query.query(where("code").is(serviceCode)), Service.class)
                 .map(service -> {
                     serviceCache.put(serviceCode, new GatewayService(service));
+                    logger.info("service[{}] is loaded!", serviceCode);
                     return Mono.empty();
                 }).subscribe();
     }
@@ -67,10 +73,10 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
 
     @Override
     public void reloadPrivileges(String credential) {
-        logger.info("privileges[{}] is loaded!", credential);
         template.selectOne(Query.query(where("credential").is(credential)), Privilege.class)
                 .map(privilege -> {
                     privilegeCache.put(credential, privilege);
+                    logger.info("privileges[{}] is loaded!", credential);
                     return Mono.empty();
                 }).subscribe();
     }
@@ -82,10 +88,10 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
 
     @Override
     public void reloadRoute(String routeCode) {
-        logger.info("route[{}] is loaded!", routeCode);
         template.selectOne(Query.query(where("code").is(routeCode)), Route.class)
                 .map(route -> {
                     routeCache.put(routeCode, route);
+                    logger.info("route[{}] is loaded!", routeCode);
                     return Mono.empty();
                 }).subscribe();
     }
@@ -126,10 +132,25 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
             logger.info("加载[{}]条授权数据，耗时：{}ms", list.size(), System.currentTimeMillis() - start);
             ctx.success(list);
         })).contextWrite(context -> context.put("start", System.currentTimeMillis())).block();
+
+        template.select(Plugin.class).all().collectList().flatMap(list -> Mono.create(ctx -> {
+            list.forEach(p -> pluginChainCache.computeIfAbsent(p.getTarget(), k -> new PluginChain())
+                    .addPlugin(p));
+            long start = ctx.contextView().get("start");
+            logger.info("加载[{}]条插件数据，耗时：{}ms", list.size(), System.currentTimeMillis() - start);
+            ctx.success(list);
+        })).contextWrite(context -> context.put("start", System.currentTimeMillis())).block();
     }
 
     @Override
     public void reloadPlugins(String serviceCode) {
-
+        Query query = Query.query(where("target").is(serviceCode));
+        template.select(Plugin.class).matching(query).all().collectList().map(list -> {
+            PluginChain pluginChain = new PluginChain();
+            list.forEach(p -> pluginChain.addPlugin(p));
+            pluginChainCache.put(serviceCode, pluginChain);
+            logger.info("service[{}] plugin is reloaded", serviceCode);
+            return list;
+        }).subscribe();
     }
 }

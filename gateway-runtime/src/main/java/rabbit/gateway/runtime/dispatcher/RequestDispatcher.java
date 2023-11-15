@@ -32,7 +32,7 @@ public class RequestDispatcher implements WebFilter {
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         if (exchange.getRequest().getLocalAddress().getPort() == managePort) {
             return chain.filter(exchange).onErrorResume(e -> {
-                logger.warn(e.getMessage());
+                logger.warn(e.getMessage(), e);
                 ServerHttpResponse response = exchange.getResponse();
                 response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
                 byte[] errorBytes = JsonUtils.writeObject(Result.failed(e.getMessage())).getBytes();

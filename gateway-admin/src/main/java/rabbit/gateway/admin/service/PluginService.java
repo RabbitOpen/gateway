@@ -29,20 +29,26 @@ public class PluginService {
     @Transactional
     public Mono<Plugin> replacePlugin(Plugin plugin) {
         return eventService.addEvent(new ReloadPluginEvent(plugin.getTarget()))
-                .flatMap(e -> deletePlugin(plugin.getTarget(), plugin.getName()))   // 删除旧的
+                .flatMap(e -> deletePlugin(plugin.getTarget(), plugin.getName().name()))   // 删除旧的
                 .flatMap(c -> template.insert(plugin));                             // 插入新的
     }
 
     /**
      * 删除服务插件
+     *
      * @param pluginName
      * @param target
      * @return
      */
     @Transactional
     public Mono<Integer> removePlugin(String pluginName, String target) {
-        return eventService.addEvent(new ReloadPluginEvent(target))
-                .flatMap(e -> deletePlugin(target, pluginName));   // 删除旧的
+        return deletePlugin(target, pluginName).flatMap(c -> {
+            if (0 == c) {
+                return Mono.just(c);
+            } else {
+                return eventService.addEvent(new ReloadPluginEvent(target)).map(e -> c);
+            }
+        });
     }
 
     private Mono<Integer> deletePlugin(String target, String name) {
