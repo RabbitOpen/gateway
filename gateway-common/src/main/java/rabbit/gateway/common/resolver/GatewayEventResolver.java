@@ -6,5 +6,5 @@ import rabbit.gateway.common.TypeResolver;
 /**
  * GateWayEvent json解析器
  */
-public class EventTypeResolver extends TypeResolver<GateWayEvent> {
+public class GatewayEventResolver extends TypeResolver<GateWayEvent> {
 }

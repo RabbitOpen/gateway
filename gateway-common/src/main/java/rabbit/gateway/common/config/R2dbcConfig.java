@@ -11,6 +11,7 @@ import org.springframework.data.r2dbc.mapping.event.BeforeConvertCallback;
 import org.springframework.util.ObjectUtils;
 import rabbit.gateway.common.BaseEntity;
 import rabbit.gateway.common.GateWayEvent;
+import rabbit.gateway.common.Schema;
 import rabbit.gateway.common.bean.ApiDesc;
 import rabbit.gateway.common.bean.RequestRateLimit;
 import rabbit.gateway.common.bean.Target;
@@ -59,6 +60,8 @@ public class R2dbcConfig extends AbstractR2dbcConfiguration {
         converterList.add(RequestRateLimitWriter.INST);
         converterList.add(MapReader.INST);
         converterList.add(MapWriter.INST);
+        converterList.add(SchemaReader.INST);
+        converterList.add(SchemaWriter.INST);
         // java.util.Date和数据库对象互转
         converterList.add(DateReader.INST);
         converterList.add(DateWriter.INST);
@@ -193,6 +196,32 @@ public class R2dbcConfig extends AbstractR2dbcConfiguration {
         @Override
         public LocalDateTime convert(Date date) {
             return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+        }
+    }
+
+    /**
+     * Schema reader
+     */
+    @ReadingConverter
+    enum SchemaReader implements Converter<String, Schema> {
+        INST;
+
+        @Override
+        public Schema convert(String json) {
+            return JsonUtils.readValue(json, Schema.class);
+        }
+    }
+
+    /**
+     * Schema writer
+     */
+    @WritingConverter
+    enum SchemaWriter implements Converter<Schema, String> {
+        INST;
+
+        @Override
+        public String convert(Schema schema) {
+            return JsonUtils.writeObject(schema);
         }
     }
 
