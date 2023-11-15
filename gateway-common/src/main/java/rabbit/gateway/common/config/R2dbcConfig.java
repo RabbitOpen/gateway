@@ -11,16 +11,15 @@ import org.springframework.data.r2dbc.mapping.event.BeforeConvertCallback;
 import org.springframework.util.ObjectUtils;
 import rabbit.gateway.common.BaseEntity;
 import rabbit.gateway.common.GateWayEvent;
+import rabbit.gateway.common.bean.ApiDesc;
+import rabbit.gateway.common.bean.RequestRateLimit;
 import rabbit.gateway.common.bean.Target;
 import rabbit.gateway.common.utils.JsonUtils;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Configuration
 public class R2dbcConfig extends AbstractR2dbcConfiguration {
@@ -56,12 +55,42 @@ public class R2dbcConfig extends AbstractR2dbcConfiguration {
         converterList.add(TargetWriter.INST);
         converterList.add(EventReader.INST);
         converterList.add(EventWriter.INST);
+        converterList.add(RequestRateLimitReader.INST);
+        converterList.add(RequestRateLimitWriter.INST);
+        converterList.add(MapReader.INST);
+        converterList.add(MapWriter.INST);
         // java.util.Date和数据库对象互转
         converterList.add(DateReader.INST);
         converterList.add(DateWriter.INST);
         return converterList;
     }
 
+
+    /**
+     * Map reader
+     */
+    @ReadingConverter
+    enum MapReader implements Converter<String, Map<String, ApiDesc>> {
+        INST;
+
+        @Override
+        public Map<String, ApiDesc> convert(String json) {
+            return JsonUtils.readValue(json, JsonUtils.constructMapType(HashMap.class, String.class, ApiDesc.class));
+        }
+    }
+
+    /**
+     * Map writer
+     */
+    @WritingConverter
+    enum MapWriter implements Converter<Map<String, ApiDesc>, String> {
+        INST;
+
+        @Override
+        public String convert(Map<String, ApiDesc> targets) {
+            return JsonUtils.writeObject(targets);
+        }
+    }
 
     /**
      * List<Target> reader
@@ -88,6 +117,33 @@ public class R2dbcConfig extends AbstractR2dbcConfiguration {
             return JsonUtils.writeObject(targets);
         }
     }
+
+    /**
+     * RequestRateLimit reader
+     */
+    @ReadingConverter
+    enum RequestRateLimitReader implements Converter<String, RequestRateLimit> {
+        INST;
+
+        @Override
+        public RequestRateLimit convert(String json) {
+            return JsonUtils.readValue(json, RequestRateLimit.class);
+        }
+    }
+
+    /**
+     * RequestRateLimit writer
+     */
+    @WritingConverter
+    enum RequestRateLimitWriter implements Converter<RequestRateLimit, String> {
+        INST;
+
+        @Override
+        public String convert(RequestRateLimit rateLimit) {
+            return JsonUtils.writeObject(rateLimit);
+        }
+    }
+
     /**
      * GateWayEvent reader
      */

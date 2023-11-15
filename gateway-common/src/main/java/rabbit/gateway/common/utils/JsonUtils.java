@@ -10,6 +10,7 @@ import rabbit.gateway.common.exception.GateWayException;
 
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.Map;
 
 public class JsonUtils {
     
@@ -50,6 +51,10 @@ public class JsonUtils {
 
     public static JavaType constructListType(Class<? extends Collection> collectionClz, Class<?> elementType) {
         return inst.getMapper().getTypeFactory().constructCollectionType(collectionClz, elementType);
+    }
+
+    public static JavaType constructMapType(Class<? extends Map> clz, Class<?> key, Class<?> value) {
+        return inst.getMapper().getTypeFactory().constructMapType(clz, key, value);
     }
 
     private ObjectMapper getMapper() {

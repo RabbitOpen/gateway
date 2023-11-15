@@ -5,12 +5,9 @@ import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import rabbit.gateway.common.context.PluginContext;
 import rabbit.gateway.common.entity.Plugin;
 import rabbit.gateway.common.event.ReloadPluginEvent;
 import reactor.core.publisher.Mono;
-
-import java.util.List;
 
 import static org.springframework.data.relational.core.query.Criteria.where;
 
@@ -22,9 +19,6 @@ public class PluginService {
 
     @Autowired
     protected EventService eventService;
-
-    @Autowired
-    protected PluginContext pluginContext;
 
     /**
      * 新增/替换已经存在的插件
