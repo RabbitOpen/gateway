@@ -2,29 +2,26 @@ package rabbit.gateway.common.event;
 
 import org.springframework.context.ApplicationContext;
 import rabbit.gateway.common.GateWayEvent;
-import rabbit.gateway.common.context.ServiceContext;
+import rabbit.gateway.common.context.PluginContext;
 
 /**
- * 重载服务事件
+ * 重载插件
  */
-public class ReloadServiceEvent implements GateWayEvent {
+public class ReloadPluginEvent implements GateWayEvent {
 
-    /**
-     * 服务编码
-     */
     private String serviceCode;
 
-    public ReloadServiceEvent() {
+    public ReloadPluginEvent() {
     }
 
-    public ReloadServiceEvent(String serviceCode) {
+    public ReloadPluginEvent(String serviceCode) {
         this();
-        setServiceCode(serviceCode);
+        this.setServiceCode(serviceCode);
     }
 
     @Override
     public void run(ApplicationContext context) {
-        context.getBean(ServiceContext.class).reloadService(getServiceCode());
+        context.getBean(PluginContext.class).reloadPlugins(getServiceCode());
     }
 
     public String getServiceCode() {

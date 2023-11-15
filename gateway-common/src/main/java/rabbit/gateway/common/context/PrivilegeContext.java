@@ -1,4 +1,4 @@
-package rabbit.gateway.common;
+package rabbit.gateway.common.context;
 
 import rabbit.gateway.common.entity.Privilege;
 

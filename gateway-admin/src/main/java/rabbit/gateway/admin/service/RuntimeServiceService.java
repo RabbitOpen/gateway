@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.transaction.annotation.Transactional;
-import rabbit.gateway.common.ServiceContext;
+import rabbit.gateway.common.context.ServiceContext;
 import rabbit.gateway.common.entity.Service;
 import rabbit.gateway.common.event.DeleteServiceEvent;
 import rabbit.gateway.common.event.ReloadServiceEvent;

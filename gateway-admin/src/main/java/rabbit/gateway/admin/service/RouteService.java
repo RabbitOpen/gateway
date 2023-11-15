@@ -5,7 +5,7 @@ import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import rabbit.gateway.common.RouteContext;
+import rabbit.gateway.common.context.RouteContext;
 import rabbit.gateway.common.entity.Route;
 import rabbit.gateway.common.event.DeleteRouteEvent;
 import rabbit.gateway.common.event.ReloadRouteEvent;

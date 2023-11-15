@@ -6,9 +6,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Query;
-import rabbit.gateway.common.PrivilegeContext;
-import rabbit.gateway.common.RouteContext;
-import rabbit.gateway.common.ServiceContext;
+import rabbit.gateway.common.context.PluginContext;
+import rabbit.gateway.common.context.PrivilegeContext;
+import rabbit.gateway.common.context.RouteContext;
+import rabbit.gateway.common.context.ServiceContext;
 import rabbit.gateway.common.entity.Privilege;
 import rabbit.gateway.common.entity.Route;
 import rabbit.gateway.common.entity.Service;
@@ -21,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.springframework.data.relational.core.query.Criteria.where;
 
 @org.springframework.stereotype.Service
-public class GateWayContext implements ServiceContext, RouteContext, PrivilegeContext {
+public class GateWayContext implements ServiceContext, RouteContext, PrivilegeContext, PluginContext {
 
     private Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -125,5 +126,10 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
             logger.info("加载[{}]条授权数据，耗时：{}ms", list.size(), System.currentTimeMillis() - start);
             ctx.success(list);
         })).contextWrite(context -> context.put("start", System.currentTimeMillis())).block();
+    }
+
+    @Override
+    public void reloadPlugins(String serviceCode) {
+
     }
 }

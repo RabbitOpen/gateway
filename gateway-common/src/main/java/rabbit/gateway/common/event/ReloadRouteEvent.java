@@ -2,7 +2,7 @@ package rabbit.gateway.common.event;
 
 import org.springframework.context.ApplicationContext;
 import rabbit.gateway.common.GateWayEvent;
-import rabbit.gateway.common.RouteContext;
+import rabbit.gateway.common.context.RouteContext;
 
 /**
  * 刷新路由事件

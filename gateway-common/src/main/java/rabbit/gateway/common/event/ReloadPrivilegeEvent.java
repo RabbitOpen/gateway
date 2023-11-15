@@ -2,7 +2,7 @@ package rabbit.gateway.common.event;
 
 import org.springframework.context.ApplicationContext;
 import rabbit.gateway.common.GateWayEvent;
-import rabbit.gateway.common.PrivilegeContext;
+import rabbit.gateway.common.context.PrivilegeContext;
 
 public class ReloadPrivilegeEvent implements GateWayEvent {
 
@@ -16,7 +16,7 @@ public class ReloadPrivilegeEvent implements GateWayEvent {
 
     public ReloadPrivilegeEvent(String credential) {
         this();
-        this.credential = credential;
+        setCredential(credential);
     }
 
     @Override

@@ -5,7 +5,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import rabbit.gateway.common.BaseEntity;
 import rabbit.gateway.common.PluginType;
 import rabbit.gateway.common.Schema;
-import rabbit.gateway.common.Scope;
 
 /**
  * 插件
@@ -18,12 +17,6 @@ public class Plugin extends BaseEntity {
      */
     @Column("name")
     private String name;
-
-    /**
-     * 作用范围
-     */
-    @Column("scope")
-    private Scope scope;
 
     /**
      * 插件类型
@@ -49,14 +42,6 @@ public class Plugin extends BaseEntity {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public Scope getScope() {
-        return scope;
-    }
-
-    public void setScope(Scope scope) {
-        this.scope = scope;
     }
 
     public PluginType getType() {

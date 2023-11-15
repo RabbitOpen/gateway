@@ -2,7 +2,7 @@ package rabbit.gateway.common.event;
 
 import org.springframework.context.ApplicationContext;
 import rabbit.gateway.common.GateWayEvent;
-import rabbit.gateway.common.ServiceContext;
+import rabbit.gateway.common.context.ServiceContext;
 
 /**
  * 删除服务事件
