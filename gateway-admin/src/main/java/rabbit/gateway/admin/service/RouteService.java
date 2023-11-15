@@ -49,6 +49,7 @@ public class RouteService {
                     r.setMappingUri(route.getMappingUri());
                     r.setRequestRateLimit(route.getRequestRateLimit());
                     r.setMethod(route.getMethod());
+                    r.setPath(route.getPath());
                     return eventService.addEvent(new ReloadRouteEvent(route.getCode()))
                             .flatMap(e -> template.update(r));
                 }).switchIfEmpty(Mono.defer(() -> Mono.error(new GateWayException("路由不存在"))));
