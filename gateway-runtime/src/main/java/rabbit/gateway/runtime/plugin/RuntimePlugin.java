@@ -1,8 +1,9 @@
 package rabbit.gateway.runtime.plugin;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.http.ResponseEntity;
-import rabbit.gateway.common.PluginType;
 import rabbit.gateway.common.entity.Plugin;
+import rabbit.gateway.runtime.context.HttpRequestContext;
 import reactor.core.publisher.Mono;
 
 /**
@@ -12,11 +13,9 @@ import reactor.core.publisher.Mono;
  */
 public abstract class RuntimePlugin<T> extends Plugin {
 
-    /**
-     * 插件类型
-     * @return
-     */
-    protected abstract PluginType getPluginType();
+    public RuntimePlugin(Plugin plugin) {
+        BeanUtils.copyProperties(plugin, this);
+    }
 
     /**
      * 优先级
@@ -24,7 +23,20 @@ public abstract class RuntimePlugin<T> extends Plugin {
      */
     public abstract Integer getPriority();
 
-    public Mono<ResponseEntity<String>> execute() {
-        return Mono.empty();
+    /**
+     * 运行插件
+     * @param context
+     * @param chain
+     * @return
+     */
+    public final Mono<ResponseEntity<String>> execute(HttpRequestContext context, PluginChain chain) {
+        return executeInternal(context).switchIfEmpty(chain.doChain(context));
     }
+
+    /**
+     * 执行插件逻辑
+     * @param context
+     * @return
+     */
+    protected abstract Mono<ResponseEntity<String>> executeInternal(HttpRequestContext context);
 }

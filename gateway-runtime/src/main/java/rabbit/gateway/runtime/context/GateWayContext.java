@@ -43,9 +43,9 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
     private Map<String, Privilege> privilegeCache = new ConcurrentHashMap<>(1024);
 
     /**
-     * 插件链缓存
+     * 插件缓存
      */
-    private Map<String, PluginChain> pluginChainCache = new ConcurrentHashMap<>(1024);
+    private Map<String, PluginManager> pluginManagerCache = new ConcurrentHashMap<>(1024);
 
     @Autowired
     protected R2dbcEntityTemplate template;
@@ -134,7 +134,7 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
         })).contextWrite(context -> context.put("start", System.currentTimeMillis())).block();
 
         template.select(Plugin.class).all().collectList().flatMap(list -> Mono.create(ctx -> {
-            list.forEach(p -> pluginChainCache.computeIfAbsent(p.getTarget(), k -> new PluginChain())
+            list.forEach(p -> pluginManagerCache.computeIfAbsent(p.getTarget(), k -> new PluginManager())
                     .addPlugin(p));
             long start = ctx.contextView().get("start");
             logger.info("加载[{}]条插件数据，耗时：{}ms", list.size(), System.currentTimeMillis() - start);
@@ -146,11 +146,20 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
     public void reloadPlugins(String serviceCode) {
         Query query = Query.query(where("target").is(serviceCode));
         template.select(Plugin.class).matching(query).all().collectList().map(list -> {
-            PluginChain pluginChain = new PluginChain();
-            list.forEach(p -> pluginChain.addPlugin(p));
-            pluginChainCache.put(serviceCode, pluginChain);
+            PluginManager pluginManager = new PluginManager();
+            list.forEach(p -> pluginManager.addPlugin(p));
+            pluginManagerCache.put(serviceCode, pluginManager);
             logger.info("service[{}] plugin is reloaded", serviceCode);
             return list;
         }).subscribe();
+    }
+
+    /**
+     * 获取服务对应的插件管理器
+     * @param serviceCode
+     * @return
+     */
+    public PluginManager getPluginManager(String serviceCode) {
+        return pluginManagerCache.get(serviceCode);
     }
 }
