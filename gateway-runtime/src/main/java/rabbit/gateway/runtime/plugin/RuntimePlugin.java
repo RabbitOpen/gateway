@@ -25,18 +25,18 @@ public abstract class RuntimePlugin<T> extends Plugin {
 
     /**
      * 运行插件
-     * @param context
+     * @param requestContext
      * @param chain
      * @return
      */
-    public final Mono<ResponseEntity<String>> execute(HttpRequestContext context, PluginChain chain) {
-        return executeInternal(context).switchIfEmpty(chain.doChain(context));
+    public final Mono<ResponseEntity<String>> execute(HttpRequestContext requestContext, PluginChain chain) {
+        return executeInternal(requestContext).switchIfEmpty(chain.doChain(requestContext));
     }
 
     /**
      * 执行插件逻辑
-     * @param context
+     * @param requestContext
      * @return
      */
-    protected abstract Mono<ResponseEntity<String>> executeInternal(HttpRequestContext context);
+    protected abstract Mono<ResponseEntity<String>> executeInternal(HttpRequestContext requestContext);
 }

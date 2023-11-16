@@ -64,12 +64,39 @@ public class R2dbcConfig extends AbstractR2dbcConfiguration {
         converterList.add(RuleMapWriter.INST);
         converterList.add(SchemaReader.INST);
         converterList.add(SchemaWriter.INST);
+        converterList.add(SetReader.INST);
+        converterList.add(SetWriter.INST);
         // java.util.Date和数据库对象互转
         converterList.add(DateReader.INST);
         converterList.add(DateWriter.INST);
         return converterList;
     }
 
+    /**
+     * set reader
+     */
+    @ReadingConverter
+    enum SetReader implements Converter<String, Set<String>> {
+        INST;
+
+        @Override
+        public Set<String> convert(String json) {
+            return JsonUtils.readValue(json, JsonUtils.constructListType(HashSet.class, String.class));
+        }
+    }
+
+    /**
+     * set writer
+     */
+    @WritingConverter
+    enum SetWriter implements Converter<Set<String>, String> {
+        INST;
+
+        @Override
+        public String convert(Set<String> targets) {
+            return JsonUtils.writeObject(targets);
+        }
+    }
 
     /**
      * Map reader

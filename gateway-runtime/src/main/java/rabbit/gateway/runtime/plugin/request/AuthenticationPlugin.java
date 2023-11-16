@@ -63,7 +63,7 @@ public class AuthenticationPlugin extends RuntimePlugin<AuthenticationSchema> {
      */
     private void addServiceRouteHeader(HttpRequestContext requestContext) {
         AuthenticationSchema schema = getSchema();
-        requestContext.getHeaders2Add().put(Headers.serviceRouteHeader.name(), schema.getRouteHeaderValue());
+        requestContext.addHeader(Headers.serviceRouteHeader.name(), schema.getRouteHeaderValue());
     }
 
     /**

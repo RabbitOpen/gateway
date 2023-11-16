@@ -5,7 +5,11 @@ import rabbit.gateway.common.PluginName;
 import rabbit.gateway.common.entity.Plugin;
 import rabbit.gateway.runtime.plugin.PluginChain;
 import rabbit.gateway.runtime.plugin.RuntimePlugin;
+import rabbit.gateway.runtime.plugin.request.AddRequestHeaderPlugin;
 import rabbit.gateway.runtime.plugin.request.AuthenticationPlugin;
+import rabbit.gateway.runtime.plugin.request.RemoveRequestHeaderPlugin;
+import rabbit.gateway.runtime.plugin.request.RequestMappingPlugin;
+import rabbit.gateway.runtime.plugin.response.AddResponseHeaderPlugin;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
@@ -71,6 +75,10 @@ public class PluginManager {
 
     static {
         pluginConverter.put(PluginName.authentication, p -> new AuthenticationPlugin(p));
+        pluginConverter.put(PluginName.addRequestHeaders, p -> new AddRequestHeaderPlugin(p));
+        pluginConverter.put(PluginName.removeRequestHeaders, p -> new RemoveRequestHeaderPlugin(p));
+        pluginConverter.put(PluginName.requestMapping, p -> new RequestMappingPlugin(p));
+        pluginConverter.put(PluginName.addResponseHeaders, p -> new AddResponseHeaderPlugin(p));
     }
 
 }

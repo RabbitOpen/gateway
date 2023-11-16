@@ -3,6 +3,7 @@ package rabbit.gateway.runtime.context;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.server.ServerWebExchange;
 import rabbit.gateway.common.Headers;
@@ -11,10 +12,7 @@ import rabbit.gateway.common.exception.GateWayException;
 import rabbit.gateway.common.exception.UnKnowApiCodeException;
 import rabbit.gateway.runtime.exception.EmptyApiCodeException;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class HttpRequestContext {
 
@@ -87,7 +85,27 @@ public class HttpRequestContext {
         if (getRequest().getMethod() != route.getMethod()) {
             throw new GateWayException("request method type is not matched!");
         }
+        if (!CollectionUtils.isEmpty(route.getRules())) {
+            route.getRules().forEach((name, value) -> {
+                if (!Objects.equals(value, getRouteHeaderValue(name))) {
+                    throw new GateWayException(String.format("route rule is not matched for header[%s]!", name));
+                }
+            });
+        }
         return route;
+    }
+
+    /**
+     * 获取路由规则头的值
+     * @param name
+     * @return
+     */
+    private String getRouteHeaderValue(String name) {
+        String routeValue = headers2Add.get(name);
+        if (!ObjectUtils.isEmpty(routeValue)) {
+            return routeValue;
+        }
+        return getRequest().getHeaders().getFirst(name);
     }
 
     /**
@@ -101,6 +119,23 @@ public class HttpRequestContext {
 
     public Map<String, String> getHeaders2Add() {
         return headers2Add;
+    }
+
+    /**
+     * 添加header
+     * @param name
+     * @param value
+     */
+    public void addHeader(String name, String value) {
+        headers2Add.put(name, value);
+    }
+
+    /**
+     * 移除header
+     * @param name
+     */
+    public void removeHeader(String name) {
+        headers2Remove.add(name);
     }
 
     /**
