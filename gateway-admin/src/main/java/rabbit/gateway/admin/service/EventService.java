@@ -14,8 +14,10 @@ import rabbit.gateway.common.entity.Event;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.util.List;
-import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import static org.springframework.data.relational.core.query.Criteria.where;
 
@@ -28,6 +30,10 @@ public class EventService implements ApplicationContextAware {
     protected R2dbcEntityTemplate template;
 
     protected ApplicationContext context;
+
+    private Thread thread;
+
+    private Semaphore semaphore = new Semaphore(0);
 
     /**
      * 添加事件
@@ -50,7 +56,7 @@ public class EventService implements ApplicationContextAware {
 
     @PostConstruct
     public void init() {
-        Thread thread = new Thread(() -> {
+        thread = new Thread(() -> {
             Query query = Query.empty().sort(Sort.by(Sort.Direction.DESC, "id")).limit(1).offset(0);
             Event lastEvent = template.select(Event.class).matching(query).first().block();
             long minEventId = 0;
@@ -66,13 +72,26 @@ public class EventService implements ApplicationContextAware {
                     if (!list.isEmpty()) {
                         minEventId = list.get(list.size() - 1).getId();
                     }
+                    if (semaphore.tryAcquire(1, 200, TimeUnit.MILLISECONDS)) {
+                        return;
+                    }
                 } catch (Exception e) {
                     logger.info(e.getMessage(), e);
                 }
-                LockSupport.parkNanos(200L * 1000 * 1000);
             }
         });
         thread.setDaemon(false);
         thread.start();
+    }
+
+    @PreDestroy
+    public void close() {
+        try {
+            semaphore.release();
+            thread.join();
+            logger.info("event service is destroyed!");
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
     }
 }

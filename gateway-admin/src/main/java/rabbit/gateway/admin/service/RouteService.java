@@ -5,6 +5,7 @@ import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import rabbit.gateway.common.bean.RequestRateLimit;
 import rabbit.gateway.common.context.RouteContext;
 import rabbit.gateway.common.entity.Route;
 import rabbit.gateway.common.event.DeleteRouteEvent;
@@ -28,17 +29,22 @@ public class RouteService {
 
     /**
      * 新增路由
+     *
      * @param route
      * @return
      */
     @Transactional
     public Mono<Route> add(Route route) {
+        if (null == route.getRequestRateLimit()) {
+            route.setRequestRateLimit(new RequestRateLimit());
+        }
         return eventService.addEvent(new ReloadRouteEvent(route.getCode()))
                 .flatMap(e -> template.insert(route));
     }
 
     /**
      * 更新路由
+     *
      * @param route
      * @return
      */
@@ -47,7 +53,7 @@ public class RouteService {
         return template.selectOne(Query.query(where("code").is(route.getCode())), Route.class)
                 .flatMap(r -> {
                     r.setMappingUri(route.getMappingUri());
-                    r.setRequestRateLimit(route.getRequestRateLimit());
+                    r.setRequestRateLimit(null == route.getRequestRateLimit() ? new RequestRateLimit() : route.getRequestRateLimit());
                     r.setMethod(route.getMethod());
                     r.setPath(route.getPath());
                     return eventService.addEvent(new ReloadRouteEvent(route.getCode()))
@@ -57,6 +63,7 @@ public class RouteService {
 
     /**
      * 删除路由
+     *
      * @param routeCode
      * @return
      */
@@ -68,6 +75,7 @@ public class RouteService {
 
     /**
      * 查询路由
+     *
      * @param routeCode
      * @return
      */
