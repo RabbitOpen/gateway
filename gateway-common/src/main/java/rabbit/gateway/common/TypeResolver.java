@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
+import rabbit.gateway.common.exception.GateWayException;
 
 public class TypeResolver extends TypeIdResolverBase {
 
@@ -35,7 +36,7 @@ public class TypeResolver extends TypeIdResolverBase {
         try {
             return context.constructSpecializedType(javaType, Class.forName(id));
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new GateWayException(e);
         }
     }
 

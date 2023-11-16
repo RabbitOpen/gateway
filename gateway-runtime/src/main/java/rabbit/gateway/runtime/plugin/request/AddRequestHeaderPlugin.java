@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
 /**
  * 添加请求头插件
  */
-public class AddRequestHeaderPlugin extends RuntimePlugin<HeaderAddSchema> {
+public class AddRequestHeaderPlugin extends RuntimePlugin {
 
     public AddRequestHeaderPlugin(Plugin plugin) {
         super(plugin);

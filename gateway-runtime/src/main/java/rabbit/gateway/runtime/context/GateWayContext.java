@@ -118,19 +118,20 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
      */
     @PostConstruct
     public void cacheData() {
+        String keyName = "start";
         template.select(Route.class).all().collectList().flatMap(list -> Mono.create(ctx -> {
             list.forEach(r -> routeCache.put(r.getCode(), r));
-            long start = ctx.contextView().get("start");
+            long start = ctx.contextView().get(keyName);
             logger.info("加载[{}]条路由数据，耗时：{}ms", list.size(), System.currentTimeMillis() - start);
             ctx.success(list);
-        })).contextWrite(context -> context.put("start", System.currentTimeMillis())).block();
+        })).contextWrite(context -> context.put(keyName, System.currentTimeMillis())).block();
 
         template.select(Service.class).all().collectList().flatMap(list -> Mono.create(ctx -> {
             list.forEach(s -> serviceCache.put(s.getCode(), new GatewayService(s)));
-            long start = ctx.contextView().get("start");
+            long start = ctx.contextView().get(keyName);
             logger.info("加载[{}]条服务数据，耗时：{}ms", list.size(), System.currentTimeMillis() - start);
             ctx.success(list);
-        })).contextWrite(context -> context.put("start", System.currentTimeMillis())).block();
+        })).contextWrite(context -> context.put(keyName, System.currentTimeMillis())).block();
 
         template.select(Privilege.class).all().collectList().flatMap(list -> Mono.create(ctx -> {
             list.forEach(p -> {
@@ -140,18 +141,18 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
                 }
                 privilegeCache.put(p.getCredential(), new PrivilegeDesc(p));
             });
-            long start = ctx.contextView().get("start");
+            long start = ctx.contextView().get(keyName);
             logger.info("加载[{}]条授权数据，耗时：{}ms", list.size(), System.currentTimeMillis() - start);
             ctx.success(list);
-        })).contextWrite(context -> context.put("start", System.currentTimeMillis())).block();
+        })).contextWrite(context -> context.put(keyName, System.currentTimeMillis())).block();
 
         template.select(Plugin.class).all().collectList().flatMap(list -> Mono.create(ctx -> {
             list.forEach(p -> pluginManagerCache.computeIfAbsent(p.getTarget(), k -> new PluginManager())
                     .addPlugin(p));
-            long start = ctx.contextView().get("start");
+            long start = ctx.contextView().get(keyName);
             logger.info("加载[{}]条插件数据，耗时：{}ms", list.size(), System.currentTimeMillis() - start);
             ctx.success(list);
-        })).contextWrite(context -> context.put("start", System.currentTimeMillis())).block();
+        })).contextWrite(context -> context.put(keyName, System.currentTimeMillis())).block();
     }
 
     @Override
@@ -159,7 +160,7 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
         Query query = Query.query(where("target").is(serviceCode));
         template.select(Plugin.class).matching(query).all().collectList().map(list -> {
             PluginManager pluginManager = new PluginManager();
-            list.forEach(p -> pluginManager.addPlugin(p));
+            list.forEach(pluginManager::addPlugin);
             pluginManagerCache.put(serviceCode, pluginManager);
             logger.info("service[{}] plugin is reloaded", serviceCode);
             return list;

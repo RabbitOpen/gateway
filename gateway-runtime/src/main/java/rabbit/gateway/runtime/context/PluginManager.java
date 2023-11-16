@@ -74,11 +74,11 @@ public class PluginManager {
     }
 
     static {
-        pluginConverter.put(PluginName.authentication, p -> new AuthenticationPlugin(p));
-        pluginConverter.put(PluginName.addRequestHeaders, p -> new AddRequestHeaderPlugin(p));
-        pluginConverter.put(PluginName.removeRequestHeaders, p -> new RemoveRequestHeaderPlugin(p));
-        pluginConverter.put(PluginName.requestMapping, p -> new RequestMappingPlugin(p));
-        pluginConverter.put(PluginName.addResponseHeaders, p -> new AddResponseHeaderPlugin(p));
+        pluginConverter.put(PluginName.AUTHENTICATION, AuthenticationPlugin::new);
+        pluginConverter.put(PluginName.ADD_REQUEST_HEADERS, AddRequestHeaderPlugin::new);
+        pluginConverter.put(PluginName.REMOVE_REQUEST_HEADERS, RemoveRequestHeaderPlugin::new);
+        pluginConverter.put(PluginName.REQUEST_MAPPING, RequestMappingPlugin::new);
+        pluginConverter.put(PluginName.ADD_RESPONSE_HEADERS, AddResponseHeaderPlugin::new);
     }
 
 }

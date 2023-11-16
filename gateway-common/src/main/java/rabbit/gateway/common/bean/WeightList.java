@@ -1,6 +1,7 @@
 package rabbit.gateway.common.bean;
 
 import rabbit.gateway.common.Weight;
+import rabbit.gateway.common.exception.GateWayException;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -74,10 +75,10 @@ public class WeightList<T extends Weight> {
      */
     public static long maxFactor(List<Long> numbers) {
         if (numbers.isEmpty()) {
-            throw new RuntimeException("空数组");
+            throw new GateWayException("空数组");
         }
         if (numbers.stream().filter(v -> v == 0).count() != 0) {
-            throw new RuntimeException("权重不能为0");
+            throw new GateWayException("权重不能为0");
         }
         if (1 == numbers.size()) {
             return numbers.get(0);

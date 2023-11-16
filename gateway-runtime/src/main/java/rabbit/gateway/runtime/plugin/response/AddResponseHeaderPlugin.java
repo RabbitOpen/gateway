@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
 /**
  * 添加响应头
  */
-public class AddResponseHeaderPlugin extends RuntimePlugin<HeaderAddSchema> {
+public class AddResponseHeaderPlugin extends RuntimePlugin {
 
     public AddResponseHeaderPlugin(Plugin plugin) {
         super(plugin);

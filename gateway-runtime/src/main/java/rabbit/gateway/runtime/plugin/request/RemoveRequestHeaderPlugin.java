@@ -8,7 +8,7 @@ import rabbit.gateway.runtime.context.HttpRequestContext;
 import rabbit.gateway.runtime.plugin.RuntimePlugin;
 import reactor.core.publisher.Mono;
 
-public class RemoveRequestHeaderPlugin extends RuntimePlugin<HeaderRemoveSchema> {
+public class RemoveRequestHeaderPlugin extends RuntimePlugin {
 
     public RemoveRequestHeaderPlugin(Plugin plugin) {
         super(plugin);

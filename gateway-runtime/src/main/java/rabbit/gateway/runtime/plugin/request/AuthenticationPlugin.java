@@ -21,7 +21,7 @@ import static rabbit.gateway.common.utils.RsaUtils.verifyWithPublicKey;
 /**
  * 认证插件
  */
-public class AuthenticationPlugin extends RuntimePlugin<AuthenticationSchema> {
+public class AuthenticationPlugin extends RuntimePlugin {
 
     /**
      * 最大请求体长度
@@ -59,6 +59,7 @@ public class AuthenticationPlugin extends RuntimePlugin<AuthenticationSchema> {
 
     /**
      * 添加路由增强头
+     *
      * @param requestContext
      */
     private void addServiceRouteHeader(HttpRequestContext requestContext) {

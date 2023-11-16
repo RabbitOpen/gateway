@@ -4,7 +4,7 @@ import org.springframework.http.HttpStatus;
 
 public class GateWayException extends RuntimeException {
 
-    private int statusCode;
+    private final int statusCode;
 
     public GateWayException(String message) {
         this(HttpStatus.INTERNAL_SERVER_ERROR.value(), message);

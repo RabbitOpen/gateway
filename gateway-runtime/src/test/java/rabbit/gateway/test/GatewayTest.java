@@ -13,6 +13,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import rabbit.gateway.common.Protocol;
 import rabbit.gateway.common.bean.Target;
 import rabbit.gateway.common.entity.*;
+import rabbit.gateway.common.exception.GateWayException;
 import rabbit.gateway.runtime.context.GateWayContext;
 import rabbit.gateway.runtime.context.GatewayService;
 import rabbit.gateway.test.rest.ServiceApi;
@@ -68,7 +69,7 @@ public class GatewayTest {
         while (null == supplier.get()) {
             LockSupport.parkNanos(20L * 1000 * 1000);
             if (System.currentTimeMillis() - start > timeoutSeconds) {
-                throw new RuntimeException(String.format("用例 [%s] 验证超时", caseName));
+                throw new GateWayException(String.format("用例 [%s] 验证超时", caseName));
             }
         }
         logger.info("用例 [{}] 验证成功", caseName);

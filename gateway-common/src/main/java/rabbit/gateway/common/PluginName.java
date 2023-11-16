@@ -2,15 +2,16 @@ package rabbit.gateway.common;
 
 public enum PluginName {
 
-    authentication,         // 认证
+    AUTHENTICATION,                     // 认证
 
-    addRequestHeaders,      // 添加header
+    ADD_REQUEST_HEADERS,                // 添加header
 
-    removeRequestHeaders,   // 移除header
+    REMOVE_REQUEST_HEADERS,             // 移除header
 
-    requestMapping,         // 请求映射
+    REQUEST_MAPPING,                    // 请求映射
 
-    requestRateLimit,       // 限流
+    REQUEST_RATE_LIMIT,                 // 限流
 
-    addResponseHeaders      // 添加response header
+    ADD_RESPONSE_HEADERS;               // 添加response header
+
 }

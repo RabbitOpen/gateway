@@ -14,7 +14,7 @@ import java.util.Map;
 /**
  * 请求映射插件
  */
-public class RequestMappingPlugin extends RuntimePlugin<String> {
+public class RequestMappingPlugin extends RuntimePlugin {
 
     public RequestMappingPlugin(Plugin plugin) {
         super(plugin);

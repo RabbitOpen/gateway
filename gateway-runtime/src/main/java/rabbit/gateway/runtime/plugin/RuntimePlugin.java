@@ -9,9 +9,8 @@ import reactor.core.publisher.Mono;
 /**
  * 运行时插件
  *
- * @param <T> schema
  */
-public abstract class RuntimePlugin<T> extends Plugin {
+public abstract class RuntimePlugin extends Plugin {
 
     public RuntimePlugin(Plugin plugin) {
         BeanUtils.copyProperties(plugin, this);

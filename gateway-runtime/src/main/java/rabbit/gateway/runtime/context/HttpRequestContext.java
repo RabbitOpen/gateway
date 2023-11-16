@@ -60,11 +60,11 @@ public class HttpRequestContext {
     }
 
     private GatewayService loadService(GateWayContext context) {
-        GatewayService service = context.getService(route.getServiceCode());
-        if (null == service) {
+        GatewayService currentService = context.getService(route.getServiceCode());
+        if (null == currentService) {
             throw new GateWayException(String.format("服务[%s]信息不存在", route.getServiceCode()));
         }
-        return service;
+        return currentService;
     }
 
     /**
@@ -78,25 +78,26 @@ public class HttpRequestContext {
         if (ObjectUtils.isEmpty(apiCode)) {
             throw new EmptyApiCodeException(getRequestPath());
         }
-        Route route = context.getRoute(apiCode);
-        if (null == route) {
+        Route currentRoute = context.getRoute(apiCode);
+        if (null == currentRoute) {
             throw new UnKnowApiCodeException(apiCode);
         }
-        if (getRequest().getMethod() != route.getMethod()) {
+        if (getRequest().getMethod() != currentRoute.getMethod()) {
             throw new GateWayException("request method type is not matched!");
         }
-        if (!CollectionUtils.isEmpty(route.getRules())) {
-            route.getRules().forEach((name, value) -> {
+        if (!CollectionUtils.isEmpty(currentRoute.getRules())) {
+            currentRoute.getRules().forEach((name, value) -> {
                 if (!Objects.equals(value, getRouteHeaderValue(name))) {
                     throw new GateWayException(String.format("route rule is not matched for header[%s]!", name));
                 }
             });
         }
-        return route;
+        return currentRoute;
     }
 
     /**
      * 获取路由规则头的值
+     *
      * @param name
      * @return
      */
@@ -123,6 +124,7 @@ public class HttpRequestContext {
 
     /**
      * 添加header
+     *
      * @param name
      * @param value
      */
@@ -132,6 +134,7 @@ public class HttpRequestContext {
 
     /**
      * 移除header
+     *
      * @param name
      */
     public void removeHeader(String name) {
@@ -229,6 +232,7 @@ public class HttpRequestContext {
 
     /**
      * 获取当前消费方的权限
+     *
      * @return
      */
     public PrivilegeDesc getPrivilege() {
