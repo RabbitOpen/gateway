@@ -8,6 +8,8 @@ public enum Headers {
 
     openApiRequestTime,
 
-    openApiRequestTimeSignature;
+    openApiRequestTimeSignature,
 
+    // 路由增强header
+    serviceRouteHeader;
 }

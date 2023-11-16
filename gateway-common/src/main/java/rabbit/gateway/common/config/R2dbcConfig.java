@@ -58,8 +58,10 @@ public class R2dbcConfig extends AbstractR2dbcConfiguration {
         converterList.add(EventWriter.INST);
         converterList.add(RequestRateLimitReader.INST);
         converterList.add(RequestRateLimitWriter.INST);
-        converterList.add(MapReader.INST);
-        converterList.add(MapWriter.INST);
+        converterList.add(ApiMapReader.INST);
+        converterList.add(ApiMapWriter.INST);
+        converterList.add(RuleMapReader.INST);
+        converterList.add(RuleMapWriter.INST);
         converterList.add(SchemaReader.INST);
         converterList.add(SchemaWriter.INST);
         // java.util.Date和数据库对象互转
@@ -73,7 +75,7 @@ public class R2dbcConfig extends AbstractR2dbcConfiguration {
      * Map reader
      */
     @ReadingConverter
-    enum MapReader implements Converter<String, Map<String, ApiDesc>> {
+    enum ApiMapReader implements Converter<String, Map<String, ApiDesc>> {
         INST;
 
         @Override
@@ -86,11 +88,37 @@ public class R2dbcConfig extends AbstractR2dbcConfiguration {
      * Map writer
      */
     @WritingConverter
-    enum MapWriter implements Converter<Map<String, ApiDesc>, String> {
+    enum ApiMapWriter implements Converter<Map<String, ApiDesc>, String> {
         INST;
 
         @Override
         public String convert(Map<String, ApiDesc> targets) {
+            return JsonUtils.writeObject(targets);
+        }
+    }
+
+    /**
+     * Map reader
+     */
+    @ReadingConverter
+    enum RuleMapReader implements Converter<String, Map<String, String>> {
+        INST;
+
+        @Override
+        public Map<String, String> convert(String json) {
+            return JsonUtils.readValue(json, JsonUtils.constructMapType(HashMap.class, String.class, String.class));
+        }
+    }
+
+    /**
+     * Map writer
+     */
+    @WritingConverter
+    enum RuleMapWriter implements Converter<Map<String, String>, String> {
+        INST;
+
+        @Override
+        public String convert(Map<String, String> targets) {
             return JsonUtils.writeObject(targets);
         }
     }

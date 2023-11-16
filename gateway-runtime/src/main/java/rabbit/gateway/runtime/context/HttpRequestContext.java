@@ -30,6 +30,8 @@ public class HttpRequestContext {
 
     private ServerWebExchange exchange;
 
+    private GateWayContext gateWayContext;
+
     /**
      * 响应数据
      */
@@ -50,8 +52,10 @@ public class HttpRequestContext {
      */
     private String requestPath;
 
+
     public HttpRequestContext(ServerWebExchange exchange, GateWayContext context) {
         this.exchange = exchange;
+        this.gateWayContext = context;
         this.requestPath = getRequest().getPath().value();
         this.route = loadRoute(context);
         this.service = loadService(context);
@@ -67,6 +71,7 @@ public class HttpRequestContext {
 
     /**
      * 加载路由
+     *
      * @param context
      * @return
      */
@@ -87,6 +92,7 @@ public class HttpRequestContext {
 
     /**
      * 获取请求对象
+     *
      * @return
      */
     public ServerHttpRequest getRequest() {
@@ -99,6 +105,7 @@ public class HttpRequestContext {
 
     /**
      * 获取响应对象
+     *
      * @return
      */
     public ServerHttpResponse getResponse() {
@@ -115,6 +122,7 @@ public class HttpRequestContext {
 
     /**
      * 获取api code
+     *
      * @return
      */
     public String getApiCode() {
@@ -123,6 +131,7 @@ public class HttpRequestContext {
 
     /**
      * 获取请求凭据
+     *
      * @return
      */
     public String getCredential() {
@@ -131,6 +140,7 @@ public class HttpRequestContext {
 
     /**
      * 获取请求时间
+     *
      * @return
      */
     public String getRequestTime() {
@@ -139,6 +149,7 @@ public class HttpRequestContext {
 
     /**
      * 获取请求时间签名
+     *
      * @return
      */
     public String getRequestTimeSignature() {
@@ -147,6 +158,7 @@ public class HttpRequestContext {
 
     /**
      * 获取当前路由
+     *
      * @return
      */
     public Route getRoute() {
@@ -155,6 +167,7 @@ public class HttpRequestContext {
 
     /**
      * 获取当前服务
+     *
      * @return
      */
     public GatewayService getService() {
@@ -163,6 +176,7 @@ public class HttpRequestContext {
 
     /**
      * 是否要移除该header
+     *
      * @param name
      * @return
      */
@@ -177,4 +191,14 @@ public class HttpRequestContext {
     public void setResponseEntity(ResponseEntity<String> responseEntity) {
         this.responseEntity = responseEntity;
     }
+
+    /**
+     * 获取当前消费方的权限
+     * @return
+     */
+    public PrivilegeDesc getPrivilege() {
+        return gateWayContext.getPrivilege(getCredential());
+    }
+
+
 }

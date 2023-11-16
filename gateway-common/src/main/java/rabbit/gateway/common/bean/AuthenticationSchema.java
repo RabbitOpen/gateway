@@ -28,6 +28,11 @@ public class AuthenticationSchema implements Schema {
     @JsonIgnore
     private PublicKey innerPublicKey;
 
+    /**
+     * 路由header的值
+     */
+    private String routeHeaderValue;
+
     public long getOffsetSeconds() {
         return offsetSeconds;
     }
@@ -58,5 +63,13 @@ public class AuthenticationSchema implements Schema {
 
     public void setInnerCredential(String innerCredential) {
         this.innerCredential = innerCredential;
+    }
+
+    public String getRouteHeaderValue() {
+        return routeHeaderValue;
+    }
+
+    public void setRouteHeaderValue(String routeHeaderValue) {
+        this.routeHeaderValue = routeHeaderValue;
     }
 }

@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Query;
+import org.springframework.util.CollectionUtils;
+import org.springframework.web.util.pattern.PathPatternParser;
 import rabbit.gateway.common.context.PluginContext;
 import rabbit.gateway.common.context.PrivilegeContext;
 import rabbit.gateway.common.context.RouteContext;
@@ -40,7 +42,7 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
     /**
      * 全新缓存
      */
-    private Map<String, Privilege> privilegeCache = new ConcurrentHashMap<>(1024);
+    private Map<String, PrivilegeDesc> privilegeCache = new ConcurrentHashMap<>(1024);
 
     /**
      * 插件缓存
@@ -75,14 +77,18 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
     public void reloadPrivileges(String credential) {
         template.selectOne(Query.query(where("credential").is(credential)), Privilege.class)
                 .map(privilege -> {
-                    privilegeCache.put(credential, privilege);
+                    if (!CollectionUtils.isEmpty(privilege.getPrivileges())) {
+                        PathPatternParser parser = new PathPatternParser();
+                        privilege.getPrivileges().forEach((c, api) -> api.setPattern(parser.parse(api.getPath())));
+                    }
+                    privilegeCache.put(credential, new PrivilegeDesc(privilege));
                     logger.info("privileges[{}] is loaded!", credential);
                     return Mono.empty();
                 }).subscribe();
     }
 
     @Override
-    public Privilege getPrivilege(String credential) {
+    public PrivilegeDesc getPrivilege(String credential) {
         return privilegeCache.get(credential);
     }
 
@@ -127,7 +133,13 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
         })).contextWrite(context -> context.put("start", System.currentTimeMillis())).block();
 
         template.select(Privilege.class).all().collectList().flatMap(list -> Mono.create(ctx -> {
-            list.forEach(p -> privilegeCache.put(p.getCredential(), p));
+            list.forEach(p -> {
+                if (!CollectionUtils.isEmpty(p.getPrivileges())) {
+                    PathPatternParser parser = new PathPatternParser();
+                    p.getPrivileges().forEach((c, api) -> api.setPattern(parser.parse(api.getPath())));
+                }
+                privilegeCache.put(p.getCredential(), new PrivilegeDesc(p));
+            });
             long start = ctx.contextView().get("start");
             logger.info("加载[{}]条授权数据，耗时：{}ms", list.size(), System.currentTimeMillis() - start);
             ctx.success(list);
@@ -156,6 +168,7 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
 
     /**
      * 获取服务对应的插件管理器
+     *
      * @param serviceCode
      * @return
      */

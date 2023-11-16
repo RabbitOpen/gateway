@@ -68,12 +68,11 @@ public class RequestDispatcher implements WebFilter {
         PluginManager pluginManager = gateWayContext.getPluginManager(context.getService().getCode());
         return pluginManager.handleRequest(context)
                 .flatMap(r -> responseData(context, r))     // 如果插件有输出则直接输出响应
-                .switchIfEmpty(Mono.defer(() -> clientFactory.execute(context))
-                        .flatMap(r -> {
-                            context.setResponseEntity(r);
-                            // 响应插件
-                            return pluginManager.handleResponse(context).flatMap(resp -> responseData(context, resp));
-                        }));
+                .switchIfEmpty(Mono.defer(() -> clientFactory.execute(context)).flatMap(r -> {
+                    context.setResponseEntity(r);
+                    // 响应插件
+                    return pluginManager.handleResponse(context).then(responseData(context, r));
+                }));
     }
 
     /**
@@ -84,19 +83,21 @@ public class RequestDispatcher implements WebFilter {
      * @return
      */
     private Mono<Void> responseData(HttpRequestContext context, ResponseEntity<String> responseEntity) {
-        ServerHttpResponse response = context.getResponse();
-        // 填充状态码
-        response.setRawStatusCode(responseEntity.getStatusCodeValue());
-        // 填充响应头
-        responseEntity.getHeaders().forEach((key, value) -> {
-            if (HttpHeaders.CONTENT_LENGTH.equalsIgnoreCase(key)) {
-                return;
-            }
-            response.getHeaders().set(key, value.get(0));
+        return Mono.defer(() -> {
+            ServerHttpResponse response = context.getResponse();
+            // 填充状态码
+            response.setRawStatusCode(responseEntity.getStatusCodeValue());
+            // 填充响应头
+            responseEntity.getHeaders().forEach((key, value) -> {
+                if (HttpHeaders.CONTENT_LENGTH.equalsIgnoreCase(key)) {
+                    return;
+                }
+                response.getHeaders().set(key, value.get(0));
+            });
+            byte[] bytes = getResponseBodyBytes(responseEntity);
+            DataBuffer wrap = response.bufferFactory().wrap(bytes);
+            return response.writeWith(Mono.just(wrap));
         });
-        byte[] bytes = getResponseBodyBytes(responseEntity);
-        DataBuffer wrap = response.bufferFactory().wrap(bytes);
-        return response.writeWith(Mono.just(wrap));
     }
 
     /**

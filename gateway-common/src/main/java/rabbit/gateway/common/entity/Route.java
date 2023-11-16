@@ -6,6 +6,8 @@ import org.springframework.http.HttpMethod;
 import rabbit.gateway.common.BaseEntity;
 import rabbit.gateway.common.bean.RequestRateLimit;
 
+import java.util.Map;
+
 /**
  * 路由
  */
@@ -41,6 +43,12 @@ public class Route extends BaseEntity {
      */
     @Column("mapping_uri")
     private String mappingUri;
+
+    /**
+     * 路由规则
+     */
+    @Column("rules")
+    private Map<String, String> rules;
 
     /**
      * 限流设置
@@ -94,5 +102,13 @@ public class Route extends BaseEntity {
 
     public void setRequestRateLimit(RequestRateLimit requestRateLimit) {
         this.requestRateLimit = requestRateLimit;
+    }
+
+    public Map<String, String> getRules() {
+        return rules;
+    }
+
+    public void setRules(Map<String, String> rules) {
+        this.rules = rules;
     }
 }
