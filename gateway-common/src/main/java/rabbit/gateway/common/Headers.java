@@ -2,14 +2,14 @@ package rabbit.gateway.common;
 
 public enum Headers {
 
-    openApiCode,
+    OPEN_API_CODE,
 
-    openApiCredential,
+    OPEN_API_CREDENTIAL,
 
-    openApiRequestTime,
+    OPEN_API_REQUEST_TIME,
 
-    openApiRequestTimeSignature,
+    OPEN_API_REQUEST_TIME_SIGNATURE,
 
     // 路由增强header
-    serviceRouteHeader;
+    SERVICE_ROUTE_HEADER;
 }

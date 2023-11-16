@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
 
-public abstract class TypeResolver<T> extends TypeIdResolverBase {
+public class TypeResolver extends TypeIdResolverBase {
 
     protected JavaType javaType;
 
@@ -16,6 +16,7 @@ public abstract class TypeResolver<T> extends TypeIdResolverBase {
 
     /**
      * 对象转值
+     *
      * @param value
      * @return
      */

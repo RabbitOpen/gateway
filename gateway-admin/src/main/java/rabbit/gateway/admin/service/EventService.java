@@ -29,8 +29,6 @@ public class EventService implements ApplicationContextAware {
 
     protected ApplicationContext context;
 
-    private Thread thread;
-
     /**
      * 添加事件
      *
@@ -52,7 +50,7 @@ public class EventService implements ApplicationContextAware {
 
     @PostConstruct
     public void init() {
-        thread = new Thread(() -> {
+        Thread thread = new Thread(() -> {
             Query query = Query.empty().sort(Sort.by(Sort.Direction.DESC, "id")).limit(1).offset(0);
             Event lastEvent = template.select(Event.class).matching(query).first().block();
             long minEventId = 0;
@@ -64,16 +62,14 @@ public class EventService implements ApplicationContextAware {
                     query = Query.query(where("id").greaterThan(minEventId))
                             .sort(Sort.by(Sort.Direction.ASC, "id")).limit(10).offset(0);
                     List<Event> list = template.select(Event.class).matching(query).all().collectList().block();
-                    list.forEach(event -> {
-                        event.getGateWayEvent().run(context);
-                    });
+                    list.forEach(event -> event.getGateWayEvent().run(context));
                     if (!list.isEmpty()) {
                         minEventId = list.get(list.size() - 1).getId();
                     }
-                    LockSupport.parkNanos(200L * 1000 * 1000);
                 } catch (Exception e) {
                     logger.info(e.getMessage(), e);
                 }
+                LockSupport.parkNanos(200L * 1000 * 1000);
             }
         });
         thread.setDaemon(false);

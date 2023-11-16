@@ -17,8 +17,14 @@
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring-boot.version>2.7.2</spring-boot.version>
         <spring-cloud.version>2021.0.6</spring-cloud.version>
+        <discovery.api.version>1.0.0-SNAPSHOT</discovery.api.version>
+        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+        <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+        <!--将所有jacoco定位到同样的父目录位置-->
+        <sonar.jacoco.reportPaths>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPaths>
     </properties>
 
     <dependencyManagement>
@@ -63,7 +69,65 @@
                 <version>1.2.3</version>
             </dependency>
 
+            <dependency>
+                <groupId>rabbit.discovery.api</groupId>
+                <artifactId>discovery-rest</artifactId>
+                <version>${discovery.api.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
+
+    <profiles>
+        <profile>
+            <id>sonar</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <sonar.host.url>http://localhost:9000</sonar.host.url>
+                <sonar.projectName>${project.artifactId}</sonar.projectName>
+            </properties>
+        </profile>
+    </profiles>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.8</version>
+                <executions>
+                    <!--          字节增强          -->
+                    <execution>
+                        <id>agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report-aggregate</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!--使用前面定义的位置-->
+                    <destFile>${sonar.jacoco.reportPaths}</destFile>
+                    <!--重要！用追加的模式-->
+                    <append>true</append>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

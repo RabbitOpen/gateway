@@ -3,10 +3,9 @@ package rabbit.gateway.common;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import org.springframework.context.ApplicationContext;
-import rabbit.gateway.common.resolver.GatewayEventResolver;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "name")
-@JsonTypeIdResolver(GatewayEventResolver.class)
+@JsonTypeIdResolver(TypeResolver.class)
 public interface GateWayEvent {
 
     void run(ApplicationContext context);

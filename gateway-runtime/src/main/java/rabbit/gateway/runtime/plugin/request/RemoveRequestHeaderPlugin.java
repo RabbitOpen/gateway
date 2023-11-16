@@ -22,7 +22,7 @@ public class RemoveRequestHeaderPlugin extends RuntimePlugin<HeaderRemoveSchema>
     @Override
     protected Mono<ResponseEntity<String>> executeInternal(HttpRequestContext requestContext) {
         HeaderRemoveSchema schema = getSchema();
-        requestContext.removeHeader(Headers.serviceRouteHeader.name());
+        requestContext.removeHeader(Headers.SERVICE_ROUTE_HEADER.name());
         if (null != schema) {
             schema.getHeaders().forEach(requestContext::removeHeader);
         }
