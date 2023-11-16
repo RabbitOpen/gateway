@@ -11,17 +11,27 @@ import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.http.HttpMethod;
 import org.springframework.test.context.junit4.SpringRunner;
+import rabbit.flt.common.utils.ReflectUtils;
+import rabbit.gateway.common.PluginName;
+import rabbit.gateway.common.PluginType;
 import rabbit.gateway.common.Protocol;
+import rabbit.gateway.common.bean.AuthenticationSchema;
 import rabbit.gateway.common.bean.Target;
 import rabbit.gateway.common.entity.*;
 import rabbit.gateway.common.exception.GateWayException;
 import rabbit.gateway.runtime.context.GateWayContext;
 import rabbit.gateway.runtime.context.GatewayService;
+import rabbit.gateway.runtime.context.PluginManager;
+import rabbit.gateway.runtime.plugin.RuntimePlugin;
+import rabbit.gateway.test.rest.PluginApi;
+import rabbit.gateway.test.rest.PrivilegeApi;
 import rabbit.gateway.test.rest.RouteApi;
 import rabbit.gateway.test.rest.ServiceApi;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 
@@ -43,6 +53,12 @@ public class GatewayTest {
     protected RouteApi routeApi;
 
     @Autowired
+    protected PluginApi pluginApi;
+
+    @Autowired
+    protected PrivilegeApi privilegeApi;
+
+    @Autowired
     protected GateWayContext context;
 
     private String serviceCode = "SVR00001";
@@ -53,7 +69,7 @@ public class GatewayTest {
      * 为了简单直连db测试，适合功能回归
      */
     @Test
-    public void gatewayTest() {
+    public void gatewayTest() throws Exception {
         try {
             cleanDb();
             runCases();
@@ -62,18 +78,67 @@ public class GatewayTest {
         }
     }
 
-    private void runCases() {
-        // 添加服务用例
-        addServiceCase();
+    private void runCases() throws Exception {
+        // 服务用例用例
+        serviceCase();
 
-        // 添加路由
-        addRouteCase();
+        // 路由用例
+        routeCase();
+
+        // 插件用例
+        pluginCase();
     }
 
     /**
-     * 添加路由
+     * 插件用例
+     * @throws NoSuchFieldException
      */
-    private void addRouteCase() {
+    private void pluginCase() throws Exception {
+        Plugin plugin = new Plugin();
+        plugin.setName(PluginName.AUTHENTICATION);
+        AuthenticationSchema schema = new AuthenticationSchema();
+        schema.setInnerCredential("INC0001");
+        schema.setOffsetSeconds(300);
+        schema.setPublicKey("305C300D06092A864886F70D0101010500034B003048024100C5B76A3974FEED9144066469D95D3A0297288F626A54A3624901552353DFBDA20FA4156CE11C6048FC3F9DB79101DB047933E031074719C10D552E05658D16290203010001");
+        schema.setInnerPublicKey("305C300D06092A864886F70D0101010500034B003048024100C5B76A3974FEED9144066469D95D3A0297288F626A54A3624901552353DFBDA20FA4156CE11C6048FC3F9DB79101DB047933E031074719C10D552E05658D16290203010001");
+        schema.setRouteHeaderValue(serviceCode);
+        plugin.setSchema(schema);
+        plugin.setTarget(serviceCode);
+        plugin.setType(PluginType.REQUEST);
+
+        pluginApi.replace(plugin).block();
+        waitUntilFound(() -> context.getPluginManager(serviceCode), "添加插件");
+        PluginManager manager = context.getPluginManager(serviceCode);
+        Field field = manager.getClass().getDeclaredField("requestPlugins");
+        List<RuntimePlugin> requestPlugins = ReflectUtils.getValue(manager, field);
+        TestCase.assertEquals(1, requestPlugins.size());
+        TestCase.assertEquals(plugin.getTarget(), requestPlugins.get(0).getTarget());
+        TestCase.assertEquals(plugin.getName(), requestPlugins.get(0).getName());
+        TestCase.assertEquals(plugin.getType(), requestPlugins.get(0).getType());
+        assertAuthenticationSchema(plugin.getSchema(), requestPlugins.get(0).getSchema());
+
+        // 删除插件
+        pluginApi.delete(serviceCode, PluginName.AUTHENTICATION.name()).block();
+        waitUntilFinished(() -> {
+            PluginManager pluginManager = context.getPluginManager(serviceCode);
+            List<RuntimePlugin> list = ReflectUtils.getValue(pluginManager, field);
+            return list.isEmpty();
+        }, "删除插件");
+
+    }
+
+    private void assertAuthenticationSchema(AuthenticationSchema pluginSchema, AuthenticationSchema cachedSchema) {
+        TestCase.assertEquals(pluginSchema.getInnerCredential(), cachedSchema.getInnerCredential());
+        TestCase.assertEquals(pluginSchema.getInnerPublicKey(), cachedSchema.getInnerPublicKey());
+        TestCase.assertEquals(pluginSchema.getPublicKey(), cachedSchema.getPublicKey());
+        TestCase.assertEquals(pluginSchema.getOffsetSeconds(), cachedSchema.getOffsetSeconds());
+        TestCase.assertEquals(pluginSchema.getRouteHeaderValue(), cachedSchema.getRouteHeaderValue());
+    }
+
+    /**
+     * 路由用例
+     */
+    private void routeCase() {
         Route route = new Route();
         route.setPath("/route/add");
         route.setMappingUri("/route/add1");
@@ -110,9 +175,9 @@ public class GatewayTest {
     }
 
     /**
-     * 添加服务
+     * 服务用例
      */
-    private void addServiceCase() {
+    private void serviceCase() {
         Service service = new Service();
         service.setCode(serviceCode);
         service.setProtocol(Protocol.HTTPS);
@@ -175,6 +240,17 @@ public class GatewayTest {
         logger.info("用例 [{}] 验证成功", caseName);
     }
 
+    private <T> void waitUntilFinished(Callable<Boolean> condition, long timeoutSeconds, String caseName) throws Exception {
+        long start = System.currentTimeMillis();
+        while (!condition.call()) {
+            LockSupport.parkNanos(20L * 1000 * 1000);
+            if (System.currentTimeMillis() - start > timeoutSeconds * 1000) {
+                throw new GateWayException(String.format("用例 [%s] 验证超时", caseName));
+            }
+        }
+        logger.info("用例 [{}] 验证成功", caseName);
+    }
+
     /**
      * 一直等到supplier返回值不为空
      *
@@ -197,6 +273,15 @@ public class GatewayTest {
         waitUntil(supplier, 5, caseName, false);
     }
 
+    /**
+     * 等到条件为真
+     * @param condition
+     * @param caseName
+     * @throws Exception
+     */
+    private void waitUntilFinished(Callable<Boolean> condition, String caseName) throws Exception {
+        waitUntilFinished(condition, 5, caseName);
+    }
     /**
      * 清除db残留数据，杜绝干扰
      */

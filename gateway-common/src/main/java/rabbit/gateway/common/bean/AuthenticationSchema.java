@@ -1,9 +1,6 @@
 package rabbit.gateway.common.bean;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import rabbit.gateway.common.Schema;
-
-import java.security.PublicKey;
 
 public class AuthenticationSchema implements Schema {
 
@@ -25,8 +22,7 @@ public class AuthenticationSchema implements Schema {
     /**
      * 内置凭据公钥
      */
-    @JsonIgnore
-    private PublicKey innerPublicKey;
+    private String innerPublicKey;
 
     /**
      * 路由header的值
@@ -49,11 +45,11 @@ public class AuthenticationSchema implements Schema {
         this.publicKey = publicKey;
     }
 
-    public PublicKey getInnerPublicKey() {
+    public String getInnerPublicKey() {
         return innerPublicKey;
     }
 
-    public void setInnerPublicKey(PublicKey innerPublicKey) {
+    public void setInnerPublicKey(String innerPublicKey) {
         this.innerPublicKey = innerPublicKey;
     }
 
