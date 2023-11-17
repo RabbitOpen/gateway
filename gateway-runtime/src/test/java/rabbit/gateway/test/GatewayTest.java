@@ -11,6 +11,7 @@ import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.http.HttpMethod;
 import org.springframework.test.context.junit4.SpringRunner;
+import rabbit.discovery.api.common.Headers;
 import rabbit.discovery.api.rest.http.HttpResponse;
 import rabbit.flt.common.utils.ReflectUtils;
 import rabbit.gateway.admin.service.EventService;
@@ -35,10 +36,7 @@ import rabbit.gateway.runtime.plugin.request.AuthenticationPlugin;
 import rabbit.gateway.runtime.plugin.request.RemoveRequestHeaderPlugin;
 import rabbit.gateway.runtime.plugin.request.RequestMappingPlugin;
 import rabbit.gateway.test.open.OpenApi;
-import rabbit.gateway.test.rest.PluginApi;
-import rabbit.gateway.test.rest.PrivilegeApi;
-import rabbit.gateway.test.rest.RouteApi;
-import rabbit.gateway.test.rest.ServiceApi;
+import rabbit.gateway.test.rest.*;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -83,6 +81,9 @@ public class GatewayTest {
 
     @Autowired
     protected EventService eventService;
+
+    @Autowired
+    protected TestApi testApi;
 
     /**
      * 测试 服务编码
@@ -167,10 +168,19 @@ public class GatewayTest {
         authorizedAccessCase2();
         // 越权访问
         pathCodeNotMatchCase();
+        // 接口映射插件
+        callMappingPathCase();
 
+        testApi.callVoidRequest();
+        HttpResponse<Void> block = testApi.callMonoVoidRequest().block();
+        TestCase.assertTrue(block.getHeaders().containsKey(Headers.API_VERSION));
+    }
+
+    private void callMappingPathCase() {
         HttpResponse<String> response = openApi.accessMappingPath().block();
         TestCase.assertTrue(response.getHeaders().containsKey(ADDED_HEADER_NAME));
         TestCase.assertTrue("hello".equals(response.getData()));
+        logger.info("用例 [接口映射] 验证成功");
     }
 
     private void pathCodeNotMatchCase() {

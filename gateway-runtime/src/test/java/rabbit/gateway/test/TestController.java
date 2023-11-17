@@ -24,4 +24,9 @@ public class TestController {
             s.success("hello");
         });
     }
+
+    @GetMapping("/void")
+    public void voidRequest(ServerHttpRequest request, ServerHttpResponse response) {
+
+    }
 }
