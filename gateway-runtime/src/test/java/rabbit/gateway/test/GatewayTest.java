@@ -11,7 +11,6 @@ import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.http.HttpMethod;
 import org.springframework.test.context.junit4.SpringRunner;
-import rabbit.discovery.api.common.Headers;
 import rabbit.discovery.api.rest.http.HttpResponse;
 import rabbit.flt.common.utils.ReflectUtils;
 import rabbit.gateway.admin.service.EventService;
