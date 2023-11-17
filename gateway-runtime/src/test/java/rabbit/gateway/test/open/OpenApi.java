@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import rabbit.discovery.api.rest.anno.OpenApiClient;
 import rabbit.discovery.api.rest.anno.OpenApiCode;
+import rabbit.discovery.api.rest.http.HttpResponse;
 import rabbit.gateway.common.entity.Route;
 import reactor.core.publisher.Mono;
 
@@ -13,5 +14,5 @@ public interface OpenApi {
 
     @OpenApiCode("RES00001")
     @GetMapping("/route/query/{routeCode}")
-    Mono<Route> queryRoute(@PathVariable("routeCode") String routeCode);
+    Mono<HttpResponse<Route>> queryRoute(@PathVariable("routeCode") String routeCode);
 }

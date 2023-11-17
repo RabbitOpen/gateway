@@ -11,6 +11,7 @@ import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.http.HttpMethod;
 import org.springframework.test.context.junit4.SpringRunner;
+import rabbit.discovery.api.rest.http.HttpResponse;
 import rabbit.flt.common.utils.ReflectUtils;
 import rabbit.gateway.admin.service.EventService;
 import rabbit.gateway.common.PluginName;
@@ -109,6 +110,10 @@ public class GatewayTest {
      */
     private final String privateKey = "30820155020100300D06092A864886F70D01010105000482013F3082013B020100024100C5B76A3974FEED9144066469D95D3A0297288F626A54A3624901552353DFBDA20FA4156CE11C6048FC3F9DB79101DB047933E031074719C10D552E05658D1629020301000102410086104630CB8A086055B5D7E48604D6CEE6DC13CD71B80E4918A394AD2DB42A8A453ADFC30F8C0FA52587E94EC41372615E440EA9112DD66529F28CDE5AAE50E1022100F035866A0144672E0AF7C4C67F624ADB48E3CD6B5CCAA9ADD374D91AB8A38505022100D2B6C84345E276628AFC33ECA5E7ED98D186FDE6607D1BC6DBC4D90AC11E15D502210094F58C5A3658F5E73E93F1A9EA9AC8B2FD9B8EEA924B7737BD56CBBF5F5AC005022060C7CD2180F6ABF344ECE3987CF7129D0F1796847AAADBD83156AF6D8E179865022022004279B1F834908EA24CC813E810E16D9E72CE74F246EDF4A066152034FAAF";
 
+    /**
+     * 响应头中添加的header名
+     */
+    private String addedResponseHeader = "response-by";
 
     /**
      * 为了简单直连db测试，适合功能回归
@@ -141,6 +146,11 @@ public class GatewayTest {
         // 未授权访问
         unAuthorizedAccessCase();
 
+        // 授权访问case
+        authorizedAccessCase();
+    }
+
+    private void authorizedAccessCase() {
         Privilege privilege = new Privilege();
         privilege.setCredential(credential);
         privilege.setPrivateKey(privateKey);
@@ -151,7 +161,8 @@ public class GatewayTest {
         TestCase.assertNull(context.getPrivilege(credential));
         privilegeApi.authorize(privilege).block();
         waitUntilFound(() -> context.getPrivilege(credential), "新增授限");
-        openApi.queryRoute(routeCode).block();
+        HttpResponse<Route> response = openApi.queryRoute(routeCode).block();
+        TestCase.assertTrue(response.getHeaders().containsKey(addedResponseHeader));
         logger.info("用例 [授权访问] 验证成功");
     }
 
@@ -191,7 +202,7 @@ public class GatewayTest {
         plugin.setName(PluginName.ADD_RESPONSE_HEADERS);
         HeaderAddSchema schema = new HeaderAddSchema();
         schema.setHeaders(new HashMap<>());
-        schema.getHeaders().put("response-by", PluginName.ADD_RESPONSE_HEADERS.name());
+        schema.getHeaders().put(addedResponseHeader, PluginName.ADD_RESPONSE_HEADERS.name());
         plugin.setSchema(schema);
         plugin.setTarget(serviceCode);
         plugin.setType(PluginType.RESPONSE);

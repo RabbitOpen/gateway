@@ -1,5 +1,6 @@
 package rabbit.gateway.runtime.plugin.response;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import rabbit.gateway.common.bean.HeaderAddSchema;
 import rabbit.gateway.common.entity.Plugin;
@@ -24,9 +25,14 @@ public class AddResponseHeaderPlugin extends RuntimePlugin {
     @Override
     protected Mono<ResponseEntity<String>> executeInternal(HttpRequestContext requestContext) {
         HeaderAddSchema schema = getSchema();
+        ResponseEntity<String> response = requestContext.getResponseEntity();
         if (null != schema) {
-            schema.getHeaders().forEach(requestContext.getResponseEntity().getHeaders()::set);
+            HttpHeaders headers = new HttpHeaders();
+            response.getHeaders().forEach(headers::put);
+            schema.getHeaders().forEach(headers::set);
+            return Mono.just(new ResponseEntity<>(response.getBody(), headers, response.getStatusCode()));
+        } else {
+            return Mono.just(response);
         }
-        return Mono.empty();
     }
 }

@@ -226,8 +226,9 @@ public class HttpRequestContext {
         return responseEntity;
     }
 
-    public void setResponseEntity(ResponseEntity<String> responseEntity) {
+    public HttpRequestContext setResponseEntity(ResponseEntity<String> responseEntity) {
         this.responseEntity = responseEntity;
+        return this;
     }
 
     /**

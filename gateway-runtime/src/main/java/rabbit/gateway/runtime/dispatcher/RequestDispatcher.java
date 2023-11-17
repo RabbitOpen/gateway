@@ -63,7 +63,7 @@ public class RequestDispatcher implements WebFilter {
                 if (e instanceof GateWayException) {
                     statusCode = ((GateWayException) e).getStatusCode();
                 }
-                logger.warn(e.getMessage(), e);
+                logger.warn(e.getMessage());
                 return responseData(context, new ResponseEntity<>(JsonUtils.writeObject(result), null, statusCode));
             });
         }
@@ -78,12 +78,11 @@ public class RequestDispatcher implements WebFilter {
     private Mono<Void> dispatchOpenApiRequest(HttpRequestContext context) {
         PluginManager pluginManager = gateWayContext.getPluginManager(context.getService().getCode());
         return pluginManager.handleRequest(context)
-                .flatMap(r -> responseData(context, r))     // 如果插件有输出则直接输出响应
-                .switchIfEmpty(Mono.defer(() -> clientFactory.execute(context)).flatMap(r -> {
-                    context.setResponseEntity(r);
-                    // 响应插件
-                    return pluginManager.handleResponse(context).then(responseData(context, r));
-                }));
+                .flatMap(r -> responseData(context, r))                         // 如果插件有输出则直接输出响应
+                .switchIfEmpty(Mono.defer(() -> clientFactory.execute(context)) // 调用服务
+                        .map(r -> context.setResponseEntity(r))                 // 设置response
+                        // 执行response 插件 然后输出结果
+                        .flatMap(ctx -> pluginManager.handleResponse(ctx).flatMap(rr -> responseData(context, rr))));
     }
 
     /**
