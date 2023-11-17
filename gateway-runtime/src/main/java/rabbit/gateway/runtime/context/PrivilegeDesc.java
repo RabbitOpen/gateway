@@ -18,4 +18,6 @@ public class PrivilegeDesc extends Privilege {
     public PublicKey getRsaPublicKey() {
         return rsaPublicKey;
     }
+
+
 }

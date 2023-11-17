@@ -29,6 +29,17 @@ public class ApiDesc {
     @JsonIgnore
     private PathPattern pattern;
 
+    public ApiDesc() {
+    }
+
+    public ApiDesc(String path, HttpMethod method, String serviceCode, long invalidDate) {
+        this();
+        this.path = path;
+        this.method = method;
+        this.serviceCode = serviceCode;
+        this.invalidDate = invalidDate;
+    }
+
     public String getPath() {
         return path;
     }
