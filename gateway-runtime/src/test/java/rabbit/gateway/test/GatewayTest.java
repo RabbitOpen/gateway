@@ -30,6 +30,10 @@ import rabbit.gateway.runtime.context.GatewayService;
 import rabbit.gateway.runtime.context.PluginManager;
 import rabbit.gateway.runtime.context.PrivilegeDesc;
 import rabbit.gateway.runtime.plugin.RuntimePlugin;
+import rabbit.gateway.runtime.plugin.request.AddRequestHeaderPlugin;
+import rabbit.gateway.runtime.plugin.request.AuthenticationPlugin;
+import rabbit.gateway.runtime.plugin.request.RemoveRequestHeaderPlugin;
+import rabbit.gateway.runtime.plugin.request.RequestMappingPlugin;
 import rabbit.gateway.test.open.OpenApi;
 import rabbit.gateway.test.rest.PluginApi;
 import rabbit.gateway.test.rest.PrivilegeApi;
@@ -90,7 +94,14 @@ public class GatewayTest {
      */
     protected String routeCode = "RES00001";
 
+    protected String mappingApiCode = "MAPPING";
+
     protected String undefinedRouteCode = "UNDEFINED-ROUTE";
+
+    /**
+     * 添加header插件添加的header头
+     */
+    protected String ADDED_HEADER_NAME = "scene";
 
     /**
      * 测试 凭据
@@ -154,11 +165,29 @@ public class GatewayTest {
         addUndefinedRoute();
         // 自己有权限，但是没有该接口的权限
         authorizedAccessCase2();
+        // 越权访问
+        pathCodeNotMatchCase();
+
+        HttpResponse<String> response = openApi.accessMappingPath().block();
+        TestCase.assertTrue(response.getHeaders().containsKey(ADDED_HEADER_NAME));
+        TestCase.assertTrue("hello".equals(response.getData()));
+    }
+
+    private void pathCodeNotMatchCase() {
+        try {
+            openApi.wrongPath().block();
+            throw new RuntimeException("");
+        } catch (Exception e) {
+            Result err = JsonUtils.readValue(e.getMessage(), Result.class);
+            TestCase.assertEquals(GATEWAY, err.getErrorType());
+            TestCase.assertTrue(err.getMessage().contains("越权访问"));
+            logger.info("用例 [越权访问] 验证成功");
+        }
     }
 
     private void authorizedAccessCase2() {
         try {
-            openApi.undefinedRoute(undefinedRouteCode).block();
+            openApi.undefinedRoute().block();
             throw new RuntimeException("");
         } catch (Exception e) {
             Result err = JsonUtils.readValue(e.getMessage(), Result.class);
@@ -181,7 +210,7 @@ public class GatewayTest {
 
     private void unDefinedRouteCase() {
         try {
-            openApi.undefinedRoute(undefinedRouteCode).block();
+            openApi.undefinedRoute().block();
             throw new RuntimeException("");
         } catch (Exception e) {
             Result err = JsonUtils.readValue(e.getMessage(), Result.class);
@@ -198,12 +227,14 @@ public class GatewayTest {
         privilege.setPublicKey(publicKey);
         Map<String, ApiDesc> privilegesMap = new HashMap<>();
         privilegesMap.put(routeCode, new ApiDesc("/route/query/{routeCode}", GET, serviceCode, 10000));
+        privilegesMap.put(mappingApiCode, new ApiDesc("/test/echo/mapping", GET, serviceCode, 10000));
         privilege.setPrivileges(privilegesMap);
         TestCase.assertNull(context.getPrivilege(credential));
         privilegeApi.authorize(privilege).block();
         waitUntilFound(() -> context.getPrivilege(credential), "新增授限");
         HttpResponse<Route> response = openApi.queryRoute(routeCode).block();
         TestCase.assertTrue(response.getHeaders().containsKey(addedResponseHeader));
+        TestCase.assertEquals(context.getRoute(routeCode).getPath(), response.getData().getPath());
         logger.info("用例 [授权访问] 验证成功");
     }
 
@@ -236,6 +267,21 @@ public class GatewayTest {
         createRemoveRequestHeadersPlugin();
         createRequestMappingPlugin();
         createAddResponseHeadersPlugin();
+        waitUntilFinished(() -> {
+            PluginManager pluginManager = context.getPluginManager(serviceCode);
+            if (null == pluginManager) {
+                return false;
+            }
+            Field field = getClassField(PluginManager.class, "requestPlugins");
+            List<RuntimePlugin> list = ReflectUtils.getValue(pluginManager, field);
+            if (4 == list.size()) {
+                TestCase.assertTrue(list.get(0) instanceof AuthenticationPlugin);
+                TestCase.assertTrue(list.get(1) instanceof AddRequestHeaderPlugin);
+                TestCase.assertTrue(list.get(2) instanceof RemoveRequestHeaderPlugin);
+                TestCase.assertTrue(list.get(3) instanceof RequestMappingPlugin);
+            }
+            return list.size() == 4;
+        }, "添加服务插件");
     }
 
     private void createAddResponseHeadersPlugin() {
@@ -270,7 +316,7 @@ public class GatewayTest {
         Plugin plugin = new Plugin();
         plugin.setName(PluginName.ADD_REQUEST_HEADERS);
         HeaderAddSchema schema = new HeaderAddSchema();
-        schema.getHeaders().put("scene", "test-case");
+        schema.getHeaders().put(ADDED_HEADER_NAME, "test-case");
         plugin.setSchema(schema);
         plugin.setTarget(serviceCode);
         plugin.setType(PluginType.REQUEST);
@@ -306,6 +352,15 @@ public class GatewayTest {
         route.setServiceCode(serviceCode);
         routeApi.add(route).block();
         waitUntilFound(() -> context.getRoute(routeCode), "添加运行时路由");
+
+        route = new Route();
+        route.setPath("/test/echo/mapping");
+        route.setMappingUri("/test/echo");
+        route.setMethod(GET);
+        route.setCode(mappingApiCode);
+        route.setServiceCode(serviceCode);
+        routeApi.add(route).block();
+        waitUntilFound(() -> context.getRoute(mappingApiCode), "添加映射路由");
     }
 
     private void addRuntimeService() {

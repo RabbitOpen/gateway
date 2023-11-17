@@ -18,10 +18,25 @@ public interface OpenApi {
 
     /**
      * 未定义的路由
-     * @param routeCode
      * @return
      */
     @OpenApiCode("UNDEFINED-ROUTE")
-    @GetMapping("/route/query/{routeCode}")
-    Mono<HttpResponse<Route>> undefinedRoute(@PathVariable("routeCode") String routeCode);
+    @GetMapping("/test/echo")
+    Mono<HttpResponse<Route>> undefinedRoute();
+
+    /**
+     * 越权访问, 有apiCode的权限，但是路径写的是别的路径
+     * @return
+     */
+    @OpenApiCode("RES00001")
+    @GetMapping("/test/echo")
+    Mono<HttpResponse<Route>> wrongPath();
+
+    /**
+     * 通过映射路径访问
+     * @return
+     */
+    @OpenApiCode("MAPPING")
+    @GetMapping("/test/echo/mapping")
+    Mono<HttpResponse<String>> accessMappingPath();
 }
