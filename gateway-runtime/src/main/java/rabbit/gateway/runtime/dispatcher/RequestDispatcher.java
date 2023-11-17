@@ -64,7 +64,8 @@ public class RequestDispatcher implements WebFilter {
                     statusCode = ((GateWayException) e).getStatusCode();
                 }
                 logger.warn(e.getMessage());
-                return responseData(context, new ResponseEntity<>(JsonUtils.writeObject(result), null, statusCode));
+                context.setResponseEntity(new ResponseEntity<>(JsonUtils.writeObject(result), null, statusCode));
+                return responseData(context);
             });
         }
     }
@@ -78,23 +79,21 @@ public class RequestDispatcher implements WebFilter {
     private Mono<Void> dispatchOpenApiRequest(HttpRequestContext context) {
         PluginManager pluginManager = gateWayContext.getPluginManager(context.getService().getCode());
         return pluginManager.handleRequest(context)
-                .flatMap(r -> responseData(context, r))                         // 如果插件有输出则直接输出响应
+                .flatMap(r -> responseData(context))                            // 如果插件有输出则直接输出响应
                 .switchIfEmpty(Mono.defer(() -> clientFactory.execute(context)) // 调用服务
-                        .map(r -> context.setResponseEntity(r))                 // 设置response
+                        .map(context::setResponseEntity)                        // 设置response
                         // 执行response 插件 然后输出结果
-                        .flatMap(ctx -> pluginManager.handleResponse(ctx).flatMap(rr -> responseData(context, rr))));
+                        .flatMap(ctx -> pluginManager.handleResponse(ctx).flatMap(rr -> responseData(context))));
     }
 
     /**
      * 输出响应
-     *
      * @param context
-     * @param responseEntity
-     * @return
      */
-    private Mono<Void> responseData(HttpRequestContext context, ResponseEntity<String> responseEntity) {
+    private Mono<Void> responseData(HttpRequestContext context) {
         return Mono.defer(() -> {
             ServerHttpResponse response = context.getResponse();
+            ResponseEntity<String> responseEntity = context.getResponseEntity();
             // 填充状态码
             response.setRawStatusCode(responseEntity.getStatusCodeValue());
             // 填充响应头

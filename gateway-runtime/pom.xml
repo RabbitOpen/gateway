@@ -43,11 +43,6 @@
 
         <dependency>
             <groupId>rabbit.discovery.api</groupId>
-            <artifactId>discovery-common</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>rabbit.discovery.api</groupId>
             <artifactId>discovery-rest</artifactId>
             <scope>test</scope>
             <exclusions>

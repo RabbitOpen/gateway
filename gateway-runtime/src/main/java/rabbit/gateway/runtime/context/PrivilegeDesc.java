@@ -2,9 +2,10 @@ package rabbit.gateway.runtime.context;
 
 import org.springframework.beans.BeanUtils;
 import rabbit.gateway.common.entity.Privilege;
-import rabbit.gateway.common.utils.RsaUtils;
 
 import java.security.PublicKey;
+
+import static rabbit.discovery.api.common.utils.RsaUtils.loadPublicKeyFromString;
 
 public class PrivilegeDesc extends Privilege {
 
@@ -12,7 +13,7 @@ public class PrivilegeDesc extends Privilege {
 
     public PrivilegeDesc(Privilege privilege) {
         BeanUtils.copyProperties(privilege, this);
-        rsaPublicKey = RsaUtils.loadPublicKeyFromString(getPublicKey());
+        rsaPublicKey = loadPublicKeyFromString(getPublicKey());
     }
 
     public PublicKey getRsaPublicKey() {

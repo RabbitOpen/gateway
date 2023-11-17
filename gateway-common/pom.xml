@@ -25,6 +25,11 @@
         </dependency>
 
         <dependency>
+            <groupId>rabbit.discovery.api</groupId>
+            <artifactId>discovery-common</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
             <scope>provided</scope>

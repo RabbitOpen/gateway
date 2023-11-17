@@ -6,8 +6,6 @@ import rabbit.gateway.common.entity.Plugin;
 import rabbit.gateway.runtime.context.HttpRequestContext;
 import reactor.core.publisher.Mono;
 
-import static rabbit.gateway.common.PluginType.RESPONSE;
-
 /**
  * 运行时插件
  */
@@ -33,10 +31,8 @@ public abstract class RuntimePlugin extends Plugin {
      */
     public final Mono<ResponseEntity<String>> execute(HttpRequestContext requestContext, PluginChain chain) {
         return executeInternal(requestContext).map(resp -> {
-            if (RESPONSE == getType()) {
-                // 用响应插件返回的response entity替换当前的entity
-                requestContext.setResponseEntity(resp);
-            }
+            // 用插件返回的response entity替换当前的entity
+            requestContext.setResponseEntity(resp);
             return resp;
         }).switchIfEmpty(chain.doChain(requestContext));
     }
