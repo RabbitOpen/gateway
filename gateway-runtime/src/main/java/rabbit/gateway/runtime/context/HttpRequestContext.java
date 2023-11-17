@@ -6,7 +6,7 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.server.ServerWebExchange;
-import rabbit.gateway.common.Headers;
+import rabbit.discovery.api.common.Headers;
 import rabbit.gateway.common.entity.Route;
 import rabbit.gateway.common.exception.GateWayException;
 import rabbit.gateway.common.exception.UnKnowApiCodeException;
@@ -164,7 +164,7 @@ public class HttpRequestContext {
      * @return
      */
     public String getApiCode() {
-        return getRequest().getHeaders().getFirst(Headers.OPEN_API_CODE.name());
+        return getRequest().getHeaders().getFirst(Headers.OPEN_API_CODE);
     }
 
     /**
@@ -173,7 +173,7 @@ public class HttpRequestContext {
      * @return
      */
     public String getCredential() {
-        return getRequest().getHeaders().getFirst(Headers.OPEN_API_CREDENTIAL.name());
+        return getRequest().getHeaders().getFirst(Headers.OPEN_API_CREDENTIAL);
     }
 
     /**
@@ -182,7 +182,7 @@ public class HttpRequestContext {
      * @return
      */
     public String getRequestTime() {
-        return getRequest().getHeaders().getFirst(Headers.OPEN_API_REQUEST_TIME.name());
+        return getRequest().getHeaders().getFirst(Headers.OPEN_API_REQUEST_TIME);
     }
 
     /**
@@ -191,7 +191,7 @@ public class HttpRequestContext {
      * @return
      */
     public String getRequestTimeSignature() {
-        return getRequest().getHeaders().getFirst(Headers.OPEN_API_REQUEST_TIME_SIGNATURE.name());
+        return getRequest().getHeaders().getFirst(Headers.OPEN_API_REQUEST_TIME_SIGNATURE);
     }
 
     /**

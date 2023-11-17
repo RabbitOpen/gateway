@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import rabbit.discovery.api.rest.EnableOpenClients;
 import rabbit.discovery.api.rest.EnableRestClients;
 
 @SpringBootApplication(scanBasePackages = "rabbit.gateway")
@@ -12,6 +13,7 @@ import rabbit.discovery.api.rest.EnableRestClients;
 @EnableTransactionManagement
 @EnableScheduling
 @EnableRestClients(basePackages = {"rabbit.gateway.test.rest"})
+@EnableOpenClients(basePackages = {"rabbit.gateway.test.open"})
 public class SpringBootTestEntry {
 
     public static void main(String[] args) {

@@ -5,7 +5,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.PathContainer;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
-import rabbit.gateway.common.Headers;
 import rabbit.gateway.common.bean.ApiDesc;
 import rabbit.gateway.common.bean.AuthenticationSchema;
 import rabbit.gateway.common.entity.Plugin;
@@ -22,6 +21,8 @@ import static rabbit.gateway.common.utils.RsaUtils.verifyWithPublicKey;
  * 认证插件
  */
 public class AuthenticationPlugin extends RuntimePlugin {
+
+    public static final String SERVICE_ROUTE_HEADER = "service-route-header";
 
     /**
      * 最大请求体长度
@@ -44,7 +45,8 @@ public class AuthenticationPlugin extends RuntimePlugin {
         }
         assertEmpty(requestContext.getApiCode(), "接口编码不能为空");
         assertEmpty(requestContext.getCredential(), "消费凭据不能为空");
-        assertEmpty(requestContext.getPrivilege(), "访问受限，没有对应接口的访问权限!");
+        assertEmpty(requestContext.getPrivilege(), String.format("凭据【%s】访问【%s】受限，没有对应接口的访问权限!",
+                requestContext.getCredential(), requestContext.getApiCode()));
         assertEmpty(requestContext.getRequestTimeSignature(), "请求时间签名信息不能为空");
         // 验签
         verifySignature(requestContext);
@@ -64,7 +66,7 @@ public class AuthenticationPlugin extends RuntimePlugin {
      */
     private void addServiceRouteHeader(HttpRequestContext requestContext) {
         AuthenticationSchema schema = getSchema();
-        requestContext.addHeader(Headers.SERVICE_ROUTE_HEADER.name(), schema.getRouteHeaderValue());
+        requestContext.addHeader(SERVICE_ROUTE_HEADER, schema.getRouteHeaderValue());
     }
 
     /**

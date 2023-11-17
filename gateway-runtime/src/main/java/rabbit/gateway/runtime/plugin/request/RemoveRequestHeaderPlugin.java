@@ -1,12 +1,13 @@
 package rabbit.gateway.runtime.plugin.request;
 
 import org.springframework.http.ResponseEntity;
-import rabbit.gateway.common.Headers;
 import rabbit.gateway.common.bean.HeaderRemoveSchema;
 import rabbit.gateway.common.entity.Plugin;
 import rabbit.gateway.runtime.context.HttpRequestContext;
 import rabbit.gateway.runtime.plugin.RuntimePlugin;
 import reactor.core.publisher.Mono;
+
+import static rabbit.gateway.runtime.plugin.request.AuthenticationPlugin.SERVICE_ROUTE_HEADER;
 
 public class RemoveRequestHeaderPlugin extends RuntimePlugin {
 
@@ -22,7 +23,7 @@ public class RemoveRequestHeaderPlugin extends RuntimePlugin {
     @Override
     protected Mono<ResponseEntity<String>> executeInternal(HttpRequestContext requestContext) {
         HeaderRemoveSchema schema = getSchema();
-        requestContext.removeHeader(Headers.SERVICE_ROUTE_HEADER.name());
+        requestContext.removeHeader(SERVICE_ROUTE_HEADER);
         if (null != schema) {
             schema.getHeaders().forEach(requestContext::removeHeader);
         }

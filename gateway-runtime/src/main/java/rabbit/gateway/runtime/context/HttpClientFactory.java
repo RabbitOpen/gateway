@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorResourceFactory;
@@ -70,7 +69,7 @@ public class HttpClientFactory {
         addRequestHeaders(context, webRequest, target);
         webRequest.uri(uriBuilder -> uriBuilder.scheme(service.getProtocol().name().toLowerCase())
                 .host(target.getHost()).port(target.getPort())
-                .port(context.getRequestPath())
+                .path(context.getRequestPath())
                 .queryParams(context.getRequest().getQueryParams())
                 .build());
         return DataBufferUtils.join(context.getRequest().getBody()).map(dataBuffer -> {
@@ -94,15 +93,8 @@ public class HttpClientFactory {
      * @return
      */
     private Mono<ResponseEntity<String>> readResponse(ClientResponse r) {
-        Mono<ResponseEntity<String>> emptyBodyResponse = Mono.just(new ResponseEntity<>("", r.headers().asHttpHeaders(), r.statusCode()));
-        if (r.statusCode() != HttpStatus.OK) {
-            emptyBodyResponse = Mono.just(new ResponseEntity<>(
-                    String.format("response error, status code: %d", r.statusCode().value()),
-                    r.headers().asHttpHeaders(), r.statusCode()));
-        }
-        return r.bodyToMono(ByteArrayResource.class).map(bytes -> new ResponseEntity<>(new String(bytes.getByteArray()),
-                r.headers().asHttpHeaders(), r.statusCode()))
-                .switchIfEmpty(emptyBodyResponse);
+        return r.bodyToMono(ByteArrayResource.class).map(bytes -> new ResponseEntity<>(new String(bytes.getByteArray()), r.headers().asHttpHeaders(), r.statusCode()))
+                .switchIfEmpty(Mono.just(new ResponseEntity<>("", r.headers().asHttpHeaders(), r.statusCode())));
     }
 
     /**

@@ -75,6 +75,12 @@
                 <version>${discovery.api.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>rabbit.discovery.api</groupId>
+                <artifactId>discovery-common</artifactId>
+                <version>${discovery.api.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 

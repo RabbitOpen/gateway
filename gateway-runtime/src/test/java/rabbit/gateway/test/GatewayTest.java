@@ -16,22 +16,27 @@ import rabbit.gateway.admin.service.EventService;
 import rabbit.gateway.common.PluginName;
 import rabbit.gateway.common.PluginType;
 import rabbit.gateway.common.Protocol;
+import rabbit.gateway.common.Result;
 import rabbit.gateway.common.bean.ApiDesc;
 import rabbit.gateway.common.bean.AuthenticationSchema;
+import rabbit.gateway.common.bean.HeaderAddSchema;
 import rabbit.gateway.common.bean.Target;
 import rabbit.gateway.common.entity.*;
 import rabbit.gateway.common.exception.GateWayException;
+import rabbit.gateway.common.utils.JsonUtils;
 import rabbit.gateway.runtime.context.GateWayContext;
 import rabbit.gateway.runtime.context.GatewayService;
 import rabbit.gateway.runtime.context.PluginManager;
 import rabbit.gateway.runtime.context.PrivilegeDesc;
 import rabbit.gateway.runtime.plugin.RuntimePlugin;
+import rabbit.gateway.test.open.OpenApi;
 import rabbit.gateway.test.rest.PluginApi;
 import rabbit.gateway.test.rest.PrivilegeApi;
 import rabbit.gateway.test.rest.RouteApi;
 import rabbit.gateway.test.rest.ServiceApi;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,6 +47,7 @@ import java.util.function.Supplier;
 
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.DEFINED_PORT;
 import static org.springframework.http.HttpMethod.GET;
+import static rabbit.gateway.common.ErrorType.GATEWAY;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = SpringBootTestEntry.class, webEnvironment = DEFINED_PORT)
@@ -66,6 +72,9 @@ public class GatewayTest {
 
     @Autowired
     protected GateWayContext context;
+
+    @Autowired
+    protected OpenApi openApi;
 
     @Autowired
     protected EventService eventService;
@@ -105,17 +114,175 @@ public class GatewayTest {
      * 为了简单直连db测试，适合功能回归
      */
     @Test
-    public void gatewayTest() throws Exception {
+    public void gatewayTest() {
         try {
-            cleanDb();
-            runCases();
+            adminCases();
+            runtimeCases();
         } finally {
             eventService.close();
             cleanDb();
         }
     }
 
-    private void runCases() {
+    /**
+     * 运行态用例
+     */
+    private void runtimeCases() {
+        cleanDb();
+        // 重置缓存
+        resetCache();
+        // 添加运行时服务
+        addRuntimeService();
+        // 添加运行时插件
+        addRuntimePlugins();
+        // 添加运行时路由
+        addRuntimeRoute();
+        waitUntilFound(() -> context.getRoute(routeCode), "添加运行时路由");
+        // 未授权访问
+        unAuthorizedAccessCase();
+
+        Privilege privilege = new Privilege();
+        privilege.setCredential(credential);
+        privilege.setPrivateKey(privateKey);
+        privilege.setPublicKey(publicKey);
+        Map<String, ApiDesc> privilegesMap = new HashMap<>();
+        privilegesMap.put(routeCode, new ApiDesc("/route/query/{routeCode}", GET, serviceCode, 10000));
+        privilege.setPrivileges(privilegesMap);
+        TestCase.assertNull(context.getPrivilege(credential));
+        privilegeApi.authorize(privilege).block();
+        waitUntilFound(() -> context.getPrivilege(credential), "新增授限");
+        openApi.queryRoute(routeCode).block();
+        logger.info("用例 [授权访问] 验证成功");
+    }
+
+    private void unAuthorizedAccessCase() {
+        try {
+            openApi.queryRoute(routeCode).block();
+            throw new RuntimeException("");
+        } catch (Exception e) {
+            Result err = JsonUtils.readValue(e.getMessage(), Result.class);
+            TestCase.assertEquals(GATEWAY, err.getErrorType());
+            TestCase.assertTrue(err.getMessage().contains("没有对应接口的访问权限"));
+            logger.info("用例 [访问受限] 验证成功");
+        }
+    }
+
+    private void resetCache() {
+        try {
+            Method initCache = context.getClass().getDeclaredMethod("initCache");
+            initCache.setAccessible(true);
+            initCache.invoke(context);
+        } catch (Exception e) {
+            throw new GateWayException(e);
+        }
+    }
+
+    private void addRuntimePlugins() {
+        // 添加授权插件
+        createAuthenticationPlugin();
+        createAddRequestHeadersPlugin();
+        createRemoveRequestHeadersPlugin();
+        createRequestMappingPlugin();
+        createAddResponseHeadersPlugin();
+    }
+
+    private void createAddResponseHeadersPlugin() {
+        Plugin plugin = new Plugin();
+        plugin.setName(PluginName.ADD_RESPONSE_HEADERS);
+        HeaderAddSchema schema = new HeaderAddSchema();
+        schema.setHeaders(new HashMap<>());
+        schema.getHeaders().put("response-by", PluginName.ADD_RESPONSE_HEADERS.name());
+        plugin.setSchema(schema);
+        plugin.setTarget(serviceCode);
+        plugin.setType(PluginType.RESPONSE);
+        pluginApi.replace(plugin).block();
+    }
+
+    private void createRequestMappingPlugin() {
+        Plugin plugin = new Plugin();
+        plugin.setName(PluginName.REQUEST_MAPPING);
+        plugin.setTarget(serviceCode);
+        plugin.setType(PluginType.REQUEST);
+        pluginApi.replace(plugin).block();
+    }
+
+    private void createRemoveRequestHeadersPlugin() {
+        Plugin plugin = new Plugin();
+        plugin.setName(PluginName.REMOVE_REQUEST_HEADERS);
+        plugin.setTarget(serviceCode);
+        plugin.setType(PluginType.REQUEST);
+        pluginApi.replace(plugin).block();
+    }
+
+    private void createAddRequestHeadersPlugin() {
+        Plugin plugin = new Plugin();
+        plugin.setName(PluginName.ADD_REQUEST_HEADERS);
+        HeaderAddSchema schema = new HeaderAddSchema();
+        schema.getHeaders().put("scene", "test-case");
+        plugin.setSchema(schema);
+        plugin.setTarget(serviceCode);
+        plugin.setType(PluginType.REQUEST);
+        pluginApi.replace(plugin).block();
+    }
+
+    /**
+     * 添加授权插件
+     * @return
+     */
+    private Plugin createAuthenticationPlugin() {
+        Plugin plugin = new Plugin();
+        plugin.setName(PluginName.AUTHENTICATION);
+        AuthenticationSchema schema = new AuthenticationSchema();
+        schema.setInnerCredential(innerCredential);
+        schema.setOffsetSeconds(300);
+        schema.setPublicKey(publicKey);
+        schema.setInnerPublicKey(publicKey);
+        schema.setRouteHeaderValue(serviceCode);
+        plugin.setSchema(schema);
+        plugin.setTarget(serviceCode);
+        plugin.setType(PluginType.REQUEST);
+        pluginApi.replace(plugin).block();
+        return plugin;
+    }
+
+    private void addRuntimeRoute() {
+        Route route = new Route();
+        route.setPath("/route/query/{routeCode}");
+        route.setMappingUri("/route/query/{routeCode}");
+        route.setMethod(GET);
+        route.setCode(routeCode);
+        route.setServiceCode(serviceCode);
+        routeApi.add(route).block();
+    }
+
+    private void addRuntimeService() {
+        Service service = new Service();
+        service.setCode(serviceCode);
+        service.setProtocol(Protocol.HTTP);
+        List<Target> upstreams = createTargets();
+        service.setUpstreams(upstreams);
+        serviceApi.add(service).block();
+    }
+
+    private List<Target> createTargets() {
+        List<Target> upstreams = new ArrayList<>();
+        Target t1 = new Target("127.0.0.1", 12800, 1);
+        t1.setCaCertificate("caCertificate");
+        t1.setCertificate("certificate");
+        upstreams.add(t1);
+        Target t2 = new Target("localhost", 12800, 2);
+        t2.setCaCertificate("caCertificate");
+        t2.setCertificate("certificate");
+        upstreams.add(t2);
+        return upstreams;
+    }
+
+    /**
+     * 管理态case
+     */
+    private void adminCases() {
+        cleanDb();
+
         // 服务用例用例
         serviceCase();
 
@@ -190,19 +357,7 @@ public class GatewayTest {
      * 插件用例
      */
     private void pluginCase() {
-        Plugin plugin = new Plugin();
-        plugin.setName(PluginName.AUTHENTICATION);
-        AuthenticationSchema schema = new AuthenticationSchema();
-        schema.setInnerCredential(innerCredential);
-        schema.setOffsetSeconds(300);
-        schema.setPublicKey(publicKey);
-        schema.setInnerPublicKey(publicKey);
-        schema.setRouteHeaderValue(serviceCode);
-        plugin.setSchema(schema);
-        plugin.setTarget(serviceCode);
-        plugin.setType(PluginType.REQUEST);
-
-        pluginApi.replace(plugin).block();
+        Plugin plugin = createAuthenticationPlugin();
         waitUntilFound(() -> context.getPluginManager(serviceCode), "添加插件");
         PluginManager manager = context.getPluginManager(serviceCode);
         Field field = getClassField(PluginManager.class, "requestPlugins");
@@ -287,16 +442,7 @@ public class GatewayTest {
         Service service = new Service();
         service.setCode(serviceCode);
         service.setProtocol(Protocol.HTTPS);
-        List<Target> upstreams = new ArrayList<>();
-        Target t1 = new Target("127.0.0.1", 12800, 1);
-        t1.setCaCertificate("caCertificate");
-        t1.setCertificate("certificate");
-        upstreams.add(t1);
-        Target t2 = new Target("localhost", 12800, 2);
-        t2.setCaCertificate("caCertificate");
-        t2.setCertificate("certificate");
-        upstreams.add(t2);
-        service.setUpstreams(upstreams);
+        service.setUpstreams(createTargets());
         serviceApi.add(service).block();
         waitUntilFound(() -> context.getService(service.getCode()), "创建服务");
         verifyServiceCache(service);
@@ -304,8 +450,8 @@ public class GatewayTest {
         // 清除缓存
         context.deleteService(serviceCode);
         service.setProtocol(Protocol.HTTP);
-        upstreams = new ArrayList<>();
-        t1 = new Target("127.0.0.1", 12800, 1);
+        List<Target> upstreams = new ArrayList<>();
+        Target t1 = new Target("127.0.0.1", 12800, 1);
         t1.setCaCertificate("caCertificate");
         t1.setCertificate("certificate");
         upstreams.add(t1);

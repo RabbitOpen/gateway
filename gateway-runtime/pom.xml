@@ -40,6 +40,12 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>rabbit.discovery.api</groupId>
+            <artifactId>discovery-common</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>rabbit.discovery.api</groupId>
             <artifactId>discovery-rest</artifactId>

@@ -14,7 +14,9 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
+import rabbit.gateway.common.ErrorType;
 import rabbit.gateway.common.Result;
+import rabbit.gateway.common.exception.GateWayException;
 import rabbit.gateway.common.utils.JsonUtils;
 import rabbit.gateway.runtime.context.GateWayContext;
 import rabbit.gateway.runtime.context.HttpClientFactory;
@@ -54,7 +56,16 @@ public class RequestDispatcher implements WebFilter {
                 return response.writeWith(Mono.just(wrap));
             });
         } else {
-            return dispatchOpenApiRequest(new HttpRequestContext(exchange, gateWayContext));
+            HttpRequestContext context = new HttpRequestContext(exchange, gateWayContext);
+            return Mono.defer(() -> dispatchOpenApiRequest(context)).onErrorResume(e -> {
+                Result result = Result.failed(e.getMessage(), ErrorType.GATEWAY);
+                int statusCode = HttpStatus.INTERNAL_SERVER_ERROR.value();
+                if (e instanceof GateWayException) {
+                    statusCode = ((GateWayException) e).getStatusCode();
+                }
+                logger.warn(e.getMessage(), e);
+                return responseData(context, new ResponseEntity<>(JsonUtils.writeObject(result), null, statusCode));
+            });
         }
     }
 

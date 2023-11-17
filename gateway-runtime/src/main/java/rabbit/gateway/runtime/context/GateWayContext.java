@@ -32,25 +32,29 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
     /**
      * 服务缓存
      */
-    private Map<String, GatewayService> serviceCache = new ConcurrentHashMap<>(1024);
+    private Map<String, GatewayService> serviceCache;
 
     /**
      * 路由缓存
      */
-    private Map<String, Route> routeCache = new ConcurrentHashMap<>(4096);
+    private Map<String, Route> routeCache;
 
     /**
      * 全新缓存
      */
-    private Map<String, PrivilegeDesc> privilegeCache = new ConcurrentHashMap<>(1024);
+    private Map<String, PrivilegeDesc> privilegeCache;
 
     /**
      * 插件缓存
      */
-    private Map<String, PluginManager> pluginManagerCache = new ConcurrentHashMap<>(1024);
+    private Map<String, PluginManager> pluginManagerCache;
 
     @Autowired
     protected R2dbcEntityTemplate template;
+
+    public GateWayContext() {
+        this.initCache();
+    }
 
     @Override
     public void reloadService(String serviceCode) {
@@ -153,6 +157,16 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
             logger.info("加载[{}]条插件数据，耗时：{}ms", list.size(), System.currentTimeMillis() - start);
             ctx.success(list);
         })).contextWrite(context -> context.put(keyName, System.currentTimeMillis())).block();
+    }
+
+    /**
+     * 初始化cache
+     */
+    private void initCache() {
+        serviceCache = new ConcurrentHashMap<>(1024);
+        routeCache = new ConcurrentHashMap<>(4096);
+        privilegeCache = new ConcurrentHashMap<>(1024);
+        pluginManagerCache = new ConcurrentHashMap<>(1024);
     }
 
     @Override
