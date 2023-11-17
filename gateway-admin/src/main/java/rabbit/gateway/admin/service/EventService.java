@@ -82,13 +82,9 @@ public class EventService implements ApplicationContextAware {
     }
 
     @PreDestroy
-    public void close() {
-        try {
-            semaphore.release();
-            thread.join();
-            logger.info("event service is destroyed!");
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
+    public void close() throws InterruptedException {
+        semaphore.release();
+        thread.join();
+        logger.info("event service is destroyed!");
     }
 }

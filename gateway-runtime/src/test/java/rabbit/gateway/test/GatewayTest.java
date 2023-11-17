@@ -11,6 +11,7 @@ import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.http.HttpMethod;
 import org.springframework.test.context.junit4.SpringRunner;
+import rabbit.discovery.api.common.Headers;
 import rabbit.discovery.api.rest.http.HttpResponse;
 import rabbit.flt.common.utils.ReflectUtils;
 import rabbit.gateway.admin.service.EventService;
@@ -132,8 +133,9 @@ public class GatewayTest {
      * 为了简单直连db测试，适合功能回归
      */
     @Test
-    public void gatewayTest() {
+    public void gatewayTest() throws InterruptedException {
         try {
+            adminCases();
             runtimeCases();
         } finally {
             eventService.close();
@@ -169,11 +171,16 @@ public class GatewayTest {
         // 接口映射插件
         callMappingPathCase();
 
-//        testApi.callVoidRequest();
-//        HttpResponse<Void> block = testApi.callMonoVoidRequest().block();
-//        TestCase.assertTrue(block.getHeaders().containsKey(Headers.API_VERSION));
+        // 无响应的管理端接口测试
+        noResponseAdminApiCase();
         // 验证无返回值的open api
 //        openApi.callVoidRequest();
+    }
+
+    private void noResponseAdminApiCase() {
+        testApi.callVoidRequest();
+        HttpResponse<Void> block = testApi.callMonoVoidRequest().block();
+        TestCase.assertTrue(block.getHeaders().containsKey(Headers.API_VERSION));
     }
 
     private void callMappingPathCase() {
