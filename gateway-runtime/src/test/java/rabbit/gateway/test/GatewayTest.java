@@ -12,6 +12,7 @@ import org.springframework.data.relational.core.query.Query;
 import org.springframework.http.HttpMethod;
 import org.springframework.test.context.junit4.SpringRunner;
 import rabbit.flt.common.utils.ReflectUtils;
+import rabbit.gateway.admin.service.EventService;
 import rabbit.gateway.common.PluginName;
 import rabbit.gateway.common.PluginType;
 import rabbit.gateway.common.Protocol;
@@ -66,6 +67,9 @@ public class GatewayTest {
     @Autowired
     protected GateWayContext context;
 
+    @Autowired
+    protected EventService eventService;
+
     /**
      * 测试 服务编码
      */
@@ -106,6 +110,7 @@ public class GatewayTest {
             cleanDb();
             runCases();
         } finally {
+            eventService.close();
             cleanDb();
         }
     }

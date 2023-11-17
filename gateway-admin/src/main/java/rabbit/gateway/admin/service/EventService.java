@@ -58,11 +58,8 @@ public class EventService implements ApplicationContextAware {
     public void init() {
         thread = new Thread(() -> {
             Query query = Query.empty().sort(Sort.by(Sort.Direction.DESC, "id")).limit(1).offset(0);
-            Event lastEvent = template.select(Event.class).matching(query).first().block();
-            long minEventId = 0;
-            if (null != lastEvent) {
-                minEventId = lastEvent.getId();
-            }
+            long minEventId = template.select(Event.class).matching(query).first().map(e -> e.getId())
+                    .switchIfEmpty(Mono.just(0L)).block();
             while (true) {
                 try {
                     query = Query.query(where("id").greaterThan(minEventId))
