@@ -58,13 +58,13 @@ public class RequestDispatcher implements WebFilter {
         } else {
             HttpRequestContext context = new HttpRequestContext(exchange, gateWayContext);
             return Mono.defer(() -> dispatchOpenApiRequest(context)).onErrorResume(e -> {
-                Result result = Result.failed(e.getMessage(), ErrorType.GATEWAY);
+                String result = JsonUtils.writeObject(Result.failed(e.getMessage(), ErrorType.GATEWAY));
                 int statusCode = HttpStatus.INTERNAL_SERVER_ERROR.value();
                 if (e instanceof GateWayException) {
                     statusCode = ((GateWayException) e).getStatusCode();
                 }
                 logger.warn(e.getMessage());
-                context.setResponseEntity(new ResponseEntity<>(JsonUtils.writeObject(result), null, statusCode));
+                context.setResponseEntity(new ResponseEntity<>(result, null, statusCode));
                 return responseData(context);
             });
         }
@@ -77,6 +77,8 @@ public class RequestDispatcher implements WebFilter {
      * @return
      */
     private Mono<Void> dispatchOpenApiRequest(HttpRequestContext context) {
+        context.loadRoute();
+        context.loadService();
         PluginManager pluginManager = gateWayContext.getPluginManager(context.getService().getCode());
         return pluginManager.handleRequest(context)
                 .flatMap(r -> responseData(context))                            // 如果插件有输出则直接输出响应
@@ -88,6 +90,7 @@ public class RequestDispatcher implements WebFilter {
 
     /**
      * 输出响应
+     *
      * @param context
      */
     private Mono<Void> responseData(HttpRequestContext context) {

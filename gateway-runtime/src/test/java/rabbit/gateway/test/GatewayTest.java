@@ -90,6 +90,8 @@ public class GatewayTest {
      */
     protected String routeCode = "RES00001";
 
+    protected String undefinedRouteCode = "UNDEFINED-ROUTE";
+
     /**
      * 测试 凭据
      */
@@ -142,12 +144,51 @@ public class GatewayTest {
         addRuntimePlugins();
         // 添加运行时路由
         addRuntimeRoute();
-        waitUntilFound(() -> context.getRoute(routeCode), "添加运行时路由");
-        // 未授权访问
+        // 未授权访问(自身没任何权限)
         unAuthorizedAccessCase();
-
         // 授权访问case
         authorizedAccessCase();
+        // 未定义的路由
+        unDefinedRouteCase();
+        // 下发未定义的路由, 再调
+        addUndefinedRoute();
+        // 自己有权限，但是没有该接口的权限
+        authorizedAccessCase2();
+    }
+
+    private void authorizedAccessCase2() {
+        try {
+            openApi.undefinedRoute(undefinedRouteCode).block();
+            throw new RuntimeException("");
+        } catch (Exception e) {
+            Result err = JsonUtils.readValue(e.getMessage(), Result.class);
+            TestCase.assertEquals(GATEWAY, err.getErrorType());
+            TestCase.assertTrue(err.getMessage().contains("没有对应接口的访问权限"));
+            logger.info("用例 [访问没权限的接口] 验证成功");
+        }
+    }
+
+    private void addUndefinedRoute() {
+        Route route = new Route();
+        route.setPath("/route/query/{routeCode}");
+        route.setMappingUri("/route/query/{routeCode}");
+        route.setMethod(GET);
+        route.setCode(undefinedRouteCode);
+        route.setServiceCode(serviceCode);
+        routeApi.add(route).block();
+        waitUntilFound(() -> context.getRoute(undefinedRouteCode), "添加运行时路由");
+    }
+
+    private void unDefinedRouteCase() {
+        try {
+            openApi.undefinedRoute(undefinedRouteCode).block();
+            throw new RuntimeException("");
+        } catch (Exception e) {
+            Result err = JsonUtils.readValue(e.getMessage(), Result.class);
+            TestCase.assertEquals(GATEWAY, err.getErrorType());
+            TestCase.assertTrue(err.getMessage().contains("未定义的路由"));
+            logger.info("用例 [访问不存在的路由] 验证成功");
+        }
     }
 
     private void authorizedAccessCase() {
@@ -264,6 +305,7 @@ public class GatewayTest {
         route.setCode(routeCode);
         route.setServiceCode(serviceCode);
         routeApi.add(route).block();
+        waitUntilFound(() -> context.getRoute(routeCode), "添加运行时路由");
     }
 
     private void addRuntimeService() {

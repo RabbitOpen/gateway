@@ -9,7 +9,7 @@ import org.springframework.web.server.ServerWebExchange;
 import rabbit.discovery.api.common.Headers;
 import rabbit.gateway.common.entity.Route;
 import rabbit.gateway.common.exception.GateWayException;
-import rabbit.gateway.common.exception.UnKnowApiCodeException;
+import rabbit.gateway.common.exception.NoRouteException;
 import rabbit.gateway.runtime.exception.EmptyApiCodeException;
 
 import java.util.*;
@@ -50,49 +50,45 @@ public class HttpRequestContext {
      */
     private String requestPath;
 
-
     public HttpRequestContext(ServerWebExchange exchange, GateWayContext context) {
         this.exchange = exchange;
         this.gateWayContext = context;
         this.requestPath = getRequest().getPath().value();
-        this.route = loadRoute(context);
-        this.service = loadService(context);
     }
 
-    private GatewayService loadService(GateWayContext context) {
-        GatewayService currentService = context.getService(route.getServiceCode());
-        if (null == currentService) {
+    /**
+     * 加载服务
+     */
+    public void loadService() {
+        this.service = gateWayContext.getService(route.getServiceCode());
+        if (null == service) {
             throw new GateWayException(String.format("服务[%s]信息不存在", route.getServiceCode()));
         }
-        return currentService;
     }
 
     /**
      * 加载路由
-     *
-     * @param context
      * @return
      */
-    private Route loadRoute(GateWayContext context) {
+    public void loadRoute() {
         String apiCode = getApiCode();
         if (ObjectUtils.isEmpty(apiCode)) {
             throw new EmptyApiCodeException(getRequestPath());
         }
-        Route currentRoute = context.getRoute(apiCode);
-        if (null == currentRoute) {
-            throw new UnKnowApiCodeException(apiCode);
+        this.route = this.gateWayContext.getRoute(apiCode);
+        if (null == route) {
+            throw new NoRouteException(apiCode);
         }
-        if (getRequest().getMethod() != currentRoute.getMethod()) {
+        if (getRequest().getMethod() != route.getMethod()) {
             throw new GateWayException("request method type is not matched!");
         }
-        if (!CollectionUtils.isEmpty(currentRoute.getRules())) {
-            currentRoute.getRules().forEach((name, value) -> {
+        if (!CollectionUtils.isEmpty(route.getRules())) {
+            route.getRules().forEach((name, value) -> {
                 if (!Objects.equals(value, getRouteHeaderValue(name))) {
                     throw new GateWayException(String.format("route rule is not matched for header[%s]!", name));
                 }
             });
         }
-        return currentRoute;
     }
 
     /**

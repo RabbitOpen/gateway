@@ -93,7 +93,7 @@ public class AuthenticationPlugin extends RuntimePlugin {
         String credential = assertEmpty(context.getCredential(), "消费凭据不能为空");
         PrivilegeDesc privilege = assertEmpty(context.getPrivilege(), "访问受限，没有对应接口的访问权限!");
         if (CollectionUtils.isEmpty(privilege.getPrivileges()) || !privilege.getPrivileges().containsKey(apiCode)) {
-            String message = String.format("credential[%s] is not allowed to access api[%s]", credential, apiCode);
+            String message = String.format("凭据【%s】访问【%s】受限，没有对应接口的访问权限!", credential, apiCode);
             throw new GateWayException(HttpStatus.FORBIDDEN.value(), message);
         }
     }

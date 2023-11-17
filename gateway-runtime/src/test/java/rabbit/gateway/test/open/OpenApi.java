@@ -15,4 +15,13 @@ public interface OpenApi {
     @OpenApiCode("RES00001")
     @GetMapping("/route/query/{routeCode}")
     Mono<HttpResponse<Route>> queryRoute(@PathVariable("routeCode") String routeCode);
+
+    /**
+     * 未定义的路由
+     * @param routeCode
+     * @return
+     */
+    @OpenApiCode("UNDEFINED-ROUTE")
+    @GetMapping("/route/query/{routeCode}")
+    Mono<HttpResponse<Route>> undefinedRoute(@PathVariable("routeCode") String routeCode);
 }
