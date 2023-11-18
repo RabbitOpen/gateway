@@ -184,12 +184,13 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        logger.info("prepared------------------");
         if (initialized) {
             return;
         }
         initialized = true;
+        long start = System.currentTimeMillis();
         this.initCache();
+        logger.info("缓存加载完毕, 耗时: {}ms", System.currentTimeMillis() - start);
         eventService.init();
     }
 
