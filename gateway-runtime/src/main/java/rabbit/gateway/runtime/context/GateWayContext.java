@@ -81,11 +81,7 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
     public void reloadPrivileges(String credential) {
         template.selectOne(Query.query(where("credential").is(credential)), Privilege.class)
                 .map(privilege -> {
-                    if (!CollectionUtils.isEmpty(privilege.getPrivileges())) {
-                        PathPatternParser parser = new PathPatternParser();
-                        privilege.getPrivileges().forEach((c, api) -> api.setPattern(parser.parse(api.getPath())));
-                    }
-                    privilegeCache.put(credential, new PrivilegeDesc(privilege));
+                    cachePrivilege(privilege);
                     logger.info("privileges[{}] is loaded!", credential);
                     return Mono.empty();
                 }).subscribe();
@@ -138,13 +134,7 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
         })).contextWrite(context -> context.put(keyName, System.currentTimeMillis())).block();
 
         template.select(Privilege.class).all().collectList().flatMap(list -> Mono.create(ctx -> {
-            list.forEach(p -> {
-                if (!CollectionUtils.isEmpty(p.getPrivileges())) {
-                    PathPatternParser parser = new PathPatternParser();
-                    p.getPrivileges().forEach((c, api) -> api.setPattern(parser.parse(api.getPath())));
-                }
-                privilegeCache.put(p.getCredential(), new PrivilegeDesc(p));
-            });
+            list.forEach(this::cachePrivilege);
             long start = ctx.contextView().get(keyName);
             logger.info("加载[{}]条授权数据，耗时：{}ms", list.size(), System.currentTimeMillis() - start);
             ctx.success(list);
@@ -157,6 +147,14 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
             logger.info("加载[{}]条插件数据，耗时：{}ms", list.size(), System.currentTimeMillis() - start);
             ctx.success(list);
         })).contextWrite(context -> context.put(keyName, System.currentTimeMillis())).block();
+    }
+
+    private void cachePrivilege(Privilege privilege) {
+        if (!CollectionUtils.isEmpty(privilege.getPrivileges())) {
+            PathPatternParser parser = new PathPatternParser();
+            privilege.getPrivileges().forEach((c, api) -> api.setPattern(parser.parse(api.getPath())));
+        }
+        privilegeCache.put(privilege.getCredential(), new PrivilegeDesc(privilege));
     }
 
     /**
