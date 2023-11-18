@@ -18,7 +18,6 @@ import rabbit.gateway.common.entity.Route;
 import rabbit.gateway.common.entity.Service;
 import reactor.core.publisher.Mono;
 
-import javax.annotation.PostConstruct;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -120,7 +119,7 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
     /**
      * 加载缓存
      */
-    @PostConstruct
+//    @PostConstruct
     public void cacheData() {
         String keyName = "start";
         template.select(Route.class).all().collectList().flatMap(list -> Mono.create(ctx -> {
