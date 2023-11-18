@@ -13,7 +13,6 @@ import rabbit.gateway.common.GateWayEvent;
 import rabbit.gateway.common.entity.Event;
 import reactor.core.publisher.Mono;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.List;
 import java.util.concurrent.Semaphore;
