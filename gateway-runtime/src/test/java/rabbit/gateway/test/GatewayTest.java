@@ -19,10 +19,7 @@ import rabbit.gateway.common.PluginName;
 import rabbit.gateway.common.PluginType;
 import rabbit.gateway.common.Protocol;
 import rabbit.gateway.common.Result;
-import rabbit.gateway.common.bean.ApiDesc;
-import rabbit.gateway.common.bean.AuthenticationSchema;
-import rabbit.gateway.common.bean.HeaderAddSchema;
-import rabbit.gateway.common.bean.Target;
+import rabbit.gateway.common.bean.*;
 import rabbit.gateway.common.entity.*;
 import rabbit.gateway.common.exception.GateWayException;
 import rabbit.gateway.common.utils.JsonUtils;
@@ -397,6 +394,7 @@ public class GatewayTest {
         route.setMethod(GET);
         route.setCode(routeCode);
         route.setServiceCode(serviceCode);
+        route.setRequestRateLimit(new RequestRateLimit());
         routeApi.add(route).block();
         waitUntilFound(() -> context.getRoute(routeCode), "添加运行时路由");
 
@@ -493,6 +491,8 @@ public class GatewayTest {
         privilegeApi.unAuthorize(privilege).block();
         waitUntilFinished(() -> privilegeApi.query(credential).block().getPrivileges().size() == 1, "取消授权");
         TestCase.assertTrue(context.getPrivilege(credential).getPrivileges().containsKey("API001"));
+
+        TestCase.assertNull(privilegeApi.query("not-existed-credential").block());
     }
 
     /**
