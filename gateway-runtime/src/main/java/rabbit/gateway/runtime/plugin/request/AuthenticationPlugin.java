@@ -14,8 +14,8 @@ import rabbit.gateway.runtime.context.PrivilegeDesc;
 import rabbit.gateway.runtime.plugin.RuntimePlugin;
 import reactor.core.publisher.Mono;
 
+import static rabbit.discovery.api.common.utils.HexUtils.toBytes;
 import static rabbit.discovery.api.common.utils.RsaUtils.verifyWithPublicKey;
-import static rabbit.gateway.common.utils.HexUtils.toBytes;
 
 /**
  * 认证插件
