@@ -4,9 +4,9 @@ server:
 spring:
   r2dbc:
     #相对路径
-    url: r2dbc:h2:file:///./src/test/resources/h2
+#    url: r2dbc:h2:file:///./src/test/resources/h2
     # 内存模式下找classpath下的schema.sql进行初始化
-#    url: r2dbc:h2:mem:///h2
+    url: r2dbc:h2:mem:///h2
     username: sa
   jpa:
     show-sql: true

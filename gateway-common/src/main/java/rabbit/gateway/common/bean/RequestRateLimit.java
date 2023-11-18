@@ -8,7 +8,7 @@ public class RequestRateLimit {
     /**
      * 服务侧限流
      */
-    private Long serverDefault;
+    private Long serverDefault = 1000L;
 
     /**
      * 客户侧限流，key为 credential

@@ -5,10 +5,7 @@ import rabbit.gateway.common.PluginName;
 import rabbit.gateway.common.entity.Plugin;
 import rabbit.gateway.runtime.plugin.PluginChain;
 import rabbit.gateway.runtime.plugin.RuntimePlugin;
-import rabbit.gateway.runtime.plugin.request.AddRequestHeaderPlugin;
-import rabbit.gateway.runtime.plugin.request.AuthenticationPlugin;
-import rabbit.gateway.runtime.plugin.request.RemoveRequestHeaderPlugin;
-import rabbit.gateway.runtime.plugin.request.RequestMappingPlugin;
+import rabbit.gateway.runtime.plugin.request.*;
 import rabbit.gateway.runtime.plugin.response.AddResponseHeaderPlugin;
 import reactor.core.publisher.Mono;
 
@@ -75,6 +72,7 @@ public class PluginManager {
 
     static {
         pluginConverter.put(PluginName.AUTHENTICATION, AuthenticationPlugin::new);
+        pluginConverter.put(PluginName.REQUEST_RATE_LIMIT, RequestRateLimitPlugin::new);
         pluginConverter.put(PluginName.ADD_REQUEST_HEADERS, AddRequestHeaderPlugin::new);
         pluginConverter.put(PluginName.REMOVE_REQUEST_HEADERS, RemoveRequestHeaderPlugin::new);
         pluginConverter.put(PluginName.REQUEST_MAPPING, RequestMappingPlugin::new);

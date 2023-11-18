@@ -4,10 +4,16 @@ package rabbit.gateway.runtime.context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationPreparedEvent;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ApplicationContextEvent;
+import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.util.pattern.PathPatternParser;
+import rabbit.gateway.admin.service.EventService;
 import rabbit.gateway.common.context.PluginContext;
 import rabbit.gateway.common.context.PrivilegeContext;
 import rabbit.gateway.common.context.RouteContext;
@@ -25,7 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.springframework.data.relational.core.query.Criteria.where;
 
 @org.springframework.stereotype.Service
-public class GateWayContext implements ServiceContext, RouteContext, PrivilegeContext, PluginContext {
+public class GateWayContext implements ServiceContext, RouteContext, PrivilegeContext, PluginContext,
+        ApplicationListener<ContextRefreshedEvent> {
 
     private Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -51,10 +58,6 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
 
     @Autowired
     protected R2dbcEntityTemplate template;
-
-    public GateWayContext() {
-        this.initCache();
-    }
 
     @Override
     public void reloadService(String serviceCode) {
@@ -116,8 +119,8 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
     /**
      * 加载缓存
      */
-    @PostConstruct
-    public void cacheData() {
+    public void loadData4Cache() {
+        this.initCache();
         String keyName = "start";
         template.select(Route.class).all().collectList().flatMap(list -> Mono.create(ctx -> {
             list.forEach(r -> routeCache.put(r.getCode(), r));
@@ -187,5 +190,16 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
      */
     public PluginManager getPluginManager(String serviceCode) {
         return pluginManagerCache.get(serviceCode);
+    }
+
+    @Autowired
+    private EventService eventService;
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent event) {
+        logger.info("prepared------------------");
+        if (null == this.serviceCache) {
+            this.loadData4Cache();
+            eventService.init();
+        }
     }
 }
