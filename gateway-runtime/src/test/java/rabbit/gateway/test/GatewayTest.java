@@ -23,10 +23,7 @@ import rabbit.gateway.common.bean.*;
 import rabbit.gateway.common.entity.*;
 import rabbit.gateway.common.exception.GateWayException;
 import rabbit.gateway.common.utils.JsonUtils;
-import rabbit.gateway.runtime.context.GateWayContext;
-import rabbit.gateway.runtime.context.GatewayService;
-import rabbit.gateway.runtime.context.PluginManager;
-import rabbit.gateway.runtime.context.PrivilegeDesc;
+import rabbit.gateway.runtime.context.*;
 import rabbit.gateway.runtime.plugin.RuntimePlugin;
 import rabbit.gateway.runtime.plugin.request.AddRequestHeaderPlugin;
 import rabbit.gateway.runtime.plugin.request.AuthenticationPlugin;
@@ -47,6 +44,7 @@ import java.util.function.Supplier;
 
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.DEFINED_PORT;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
 import static rabbit.gateway.common.ErrorType.GATEWAY;
 
 @RunWith(SpringRunner.class)
@@ -126,6 +124,9 @@ public class GatewayTest {
      */
     private String addedResponseHeader = "added-response-header";
 
+    @Autowired
+    protected HttpClientFactory httpClientFactory;
+
     /**
      * 为了简单直连db测试，适合功能回归
      */
@@ -136,6 +137,7 @@ public class GatewayTest {
             runtimeCases();
         } finally {
             eventService.close();
+            httpClientFactory.close();
             cleanDb();
         }
     }
@@ -180,7 +182,7 @@ public class GatewayTest {
      */
     private void noResponseOpenApiTest() {
         openApi.callVoidRequest();
-        HttpResponse<Void> response = openApi.callMonoVoidRequest().block();
+        HttpResponse<Void> response = openApi.callMonoVoidRequest("hello").block();
         TestCase.assertNull(response.getData());
         TestCase.assertTrue(response.getHeaders().containsKey(Headers.OPEN_API_CODE));
         TestCase.assertTrue(response.getHeaders().containsKey(addedResponseHeader));
@@ -188,6 +190,12 @@ public class GatewayTest {
         response = openApi.callHttpResponseVoidRequest();
         TestCase.assertNull(response.getData());
         TestCase.assertTrue(response.getHeaders().containsKey(Headers.OPEN_API_CODE));
+        TestCase.assertTrue(response.getHeaders().containsKey(addedResponseHeader));
+        TestCase.assertTrue(response.getHeaders().containsKey(addedRequestHeader));
+        response = openApi.post("hello");
+        TestCase.assertNull(response.getData());
+        TestCase.assertTrue(response.getHeaders().containsKey(Headers.OPEN_API_CODE));
+        TestCase.assertTrue("hello".equals(response.getHeaders().get("request-body")));
         TestCase.assertTrue(response.getHeaders().containsKey(addedResponseHeader));
         TestCase.assertTrue(response.getHeaders().containsKey(addedRequestHeader));
         logger.info("用例 [无返回值open api访问] 验证成功");
@@ -271,6 +279,7 @@ public class GatewayTest {
         privilegesMap.put(routeCode, new ApiDesc("/route/query/{routeCode}", GET, serviceCode, 10000));
         privilegesMap.put(mappingApiCode, new ApiDesc("/test/echo/mapping", GET, serviceCode, 10000));
         privilegesMap.put("VOID-RESPONSE", new ApiDesc("/test/void", GET, serviceCode, 10000));
+        privilegesMap.put("POST", new ApiDesc("/test/post", POST, serviceCode, 10000));
         privilege.setPrivileges(privilegesMap);
         TestCase.assertNull(context.getPrivilege(credential));
         privilegeApi.authorize(privilege).block();
@@ -414,6 +423,14 @@ public class GatewayTest {
         route.setServiceCode(serviceCode);
         routeApi.add(route).block();
         waitUntilFound(() -> context.getRoute("VOID-RESPONSE"), "添加无返回值路由");
+
+        route = new Route();
+        route.setPath("/test/post");
+        route.setMethod(POST);
+        route.setCode("POST");
+        route.setServiceCode(serviceCode);
+        routeApi.add(route).block();
+        waitUntilFound(() -> context.getRoute("POST"), "添加POST路由");
     }
 
     private void addRuntimeService() {

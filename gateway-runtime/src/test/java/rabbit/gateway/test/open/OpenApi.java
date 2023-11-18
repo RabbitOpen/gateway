@@ -2,6 +2,9 @@ package rabbit.gateway.test.open;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import rabbit.discovery.api.common.http.anno.Body;
 import rabbit.discovery.api.rest.anno.OpenApiClient;
 import rabbit.discovery.api.rest.anno.OpenApiCode;
 import rabbit.discovery.api.rest.http.HttpResponse;
@@ -44,11 +47,20 @@ public interface OpenApi {
     @GetMapping("/test/void")
     void callVoidRequest();
 
+    /**
+     * get 方法，body会被忽略
+     * @param body
+     * @return
+     */
     @OpenApiCode("VOID-RESPONSE")
     @GetMapping("/test/void")
-    Mono<HttpResponse<Void>> callMonoVoidRequest();
+    Mono<HttpResponse<Void>> callMonoVoidRequest(@Body String body);
 
     @OpenApiCode("VOID-RESPONSE")
     @GetMapping("/test/void")
     HttpResponse<Void> callHttpResponseVoidRequest();
+
+    @OpenApiCode("POST")
+    @PostMapping("/test/post")
+    HttpResponse<Void> post(@Body String body);
 }

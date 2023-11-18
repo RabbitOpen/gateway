@@ -1,17 +1,22 @@
 package rabbit.gateway.test;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import rabbit.gateway.common.Result;
 import rabbit.gateway.common.exception.GateWayException;
 import reactor.core.publisher.Mono;
+
+import javax.annotation.PostConstruct;
 
 @RestController
 @RequestMapping("/test")
 public class TestController {
+
+    private Logger logger = LoggerFactory.getLogger(getClass());
 
     @GetMapping("/echo")
     public Mono<String> echoRequest(ServerHttpRequest request, ServerHttpResponse response) {
@@ -38,5 +43,13 @@ public class TestController {
     @GetMapping("/error")
     public void error() {
         throw new GateWayException("模拟异常");
+    }
+
+    @PostMapping("/post")
+    public void post(ServerHttpRequest request, ServerHttpResponse response,
+                     @RequestBody() String body) {
+        addResponseHeaders(request, response);
+        logger.info("request body: {}", body);
+        response.getHeaders().set("request-body", body);
     }
 }
