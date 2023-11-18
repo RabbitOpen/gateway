@@ -40,9 +40,15 @@ public interface OpenApi {
     @GetMapping("/test/echo/mapping")
     Mono<HttpResponse<String>> accessMappingPath();
 
+    @OpenApiCode("VOID-RESPONSE")
     @GetMapping("/test/void")
     void callVoidRequest();
 
+    @OpenApiCode("VOID-RESPONSE")
     @GetMapping("/test/void")
     Mono<HttpResponse<Void>> callMonoVoidRequest();
+
+    @OpenApiCode("VOID-RESPONSE")
+    @GetMapping("/test/void")
+    HttpResponse<Void> callHttpResponseVoidRequest();
 }

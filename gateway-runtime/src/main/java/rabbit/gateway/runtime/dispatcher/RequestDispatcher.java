@@ -14,7 +14,6 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
-import rabbit.gateway.common.ErrorType;
 import rabbit.gateway.common.Result;
 import rabbit.gateway.common.exception.GateWayException;
 import rabbit.gateway.common.utils.JsonUtils;
@@ -48,7 +47,11 @@ public class RequestDispatcher implements WebFilter {
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         if (exchange.getRequest().getLocalAddress().getPort() == managePort) {
             return chain.filter(exchange).onErrorResume(e -> {
-                logger.warn(e.getMessage(), e);
+                if (e instanceof GateWayException) {
+                    logger.error(e.getMessage());
+                } else {
+                    logger.error(e.getMessage(), e);
+                }
                 ServerHttpResponse response = exchange.getResponse();
                 response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
                 byte[] errorBytes = JsonUtils.writeObject(Result.failed(e.getMessage())).getBytes();
@@ -58,7 +61,7 @@ public class RequestDispatcher implements WebFilter {
         } else {
             HttpRequestContext context = new HttpRequestContext(exchange, gateWayContext);
             return Mono.defer(() -> dispatchOpenApiRequest(context)).onErrorResume(e -> {
-                String result = JsonUtils.writeObject(Result.failed(e.getMessage(), ErrorType.GATEWAY));
+                String result = JsonUtils.writeObject(Result.failed(e.getMessage()));
                 int statusCode = HttpStatus.INTERNAL_SERVER_ERROR.value();
                 if (e instanceof GateWayException) {
                     statusCode = ((GateWayException) e).getStatusCode();

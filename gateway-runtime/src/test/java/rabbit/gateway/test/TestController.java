@@ -6,6 +6,7 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import rabbit.gateway.common.exception.GateWayException;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -32,5 +33,10 @@ public class TestController {
     @GetMapping("/void")
     public void voidRequest(ServerHttpRequest request, ServerHttpResponse response) {
         addResponseHeaders(request, response);
+    }
+
+    @GetMapping("/error")
+    public void error() {
+        throw new GateWayException("模拟异常");
     }
 }

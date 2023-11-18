@@ -14,7 +14,7 @@ public class Result {
     }
 
     public static Result failed(String message) {
-        return failed(message, ErrorType.SERVICE);
+        return failed(message, ErrorType.GATEWAY);
     }
 
     public String getMessage() {

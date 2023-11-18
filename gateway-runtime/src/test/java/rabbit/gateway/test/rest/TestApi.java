@@ -11,6 +11,12 @@ public interface TestApi {
     @GetMapping("/void")
     void callVoidRequest();
 
+    /**
+     * 模拟异常
+     */
+    @GetMapping("/error")
+    void fakeException();
+
     @GetMapping("/void")
     Mono<HttpResponse<Void>> callMonoVoidRequest();
 }

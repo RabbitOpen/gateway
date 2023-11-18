@@ -102,7 +102,7 @@ public class GatewayTest {
     /**
      * 添加header插件添加的header头
      */
-    protected String ADDED_HEADER_NAME = "scene";
+    protected String addedRequestHeader = "added-request-header";
 
     /**
      * 测试 凭据
@@ -127,7 +127,7 @@ public class GatewayTest {
     /**
      * 响应头中添加的header名
      */
-    private String addedResponseHeader = "response-by";
+    private String addedResponseHeader = "added-response-header";
 
     /**
      * 为了简单直连db测试，适合功能回归
@@ -173,19 +173,47 @@ public class GatewayTest {
 
         // 无响应的管理端接口测试
         noResponseAdminApiCase();
-        // 验证无返回值的open api
-//        openApi.callVoidRequest();
+
+        // 验证无返回值的open api case
+        noResponseOpenApiTest();
+    }
+
+    /**
+     * 无返回值的openApi case
+     */
+    private void noResponseOpenApiTest() {
+        openApi.callVoidRequest();
+        HttpResponse<Void> response = openApi.callMonoVoidRequest().block();
+        TestCase.assertNull(response.getData());
+        TestCase.assertTrue(response.getHeaders().containsKey(Headers.OPEN_API_CODE));
+        TestCase.assertTrue(response.getHeaders().containsKey(addedResponseHeader));
+        TestCase.assertTrue(response.getHeaders().containsKey(addedRequestHeader));
+        response = openApi.callHttpResponseVoidRequest();
+        TestCase.assertNull(response.getData());
+        TestCase.assertTrue(response.getHeaders().containsKey(Headers.OPEN_API_CODE));
+        TestCase.assertTrue(response.getHeaders().containsKey(addedResponseHeader));
+        TestCase.assertTrue(response.getHeaders().containsKey(addedRequestHeader));
+        logger.info("用例 [无返回值open api访问] 验证成功");
     }
 
     private void noResponseAdminApiCase() {
         testApi.callVoidRequest();
         HttpResponse<Void> block = testApi.callMonoVoidRequest().block();
         TestCase.assertTrue(block.getHeaders().containsKey(Headers.API_VERSION));
+        try {
+            testApi.fakeException();
+            throw new RuntimeException("");
+        } catch (Exception e) {
+            Result err = JsonUtils.readValue(e.getMessage(), Result.class);
+            TestCase.assertEquals(GATEWAY, err.getErrorType());
+            TestCase.assertTrue(err.getMessage().contains("模拟异常"));
+            logger.info("用例 [模拟异常] 验证成功");
+        }
     }
 
     private void callMappingPathCase() {
         HttpResponse<String> response = openApi.accessMappingPath().block();
-        TestCase.assertTrue(response.getHeaders().containsKey(ADDED_HEADER_NAME));
+        TestCase.assertTrue(response.getHeaders().containsKey(addedRequestHeader));
         TestCase.assertTrue("hello".equals(response.getData()));
         logger.info("用例 [接口映射] 验证成功");
     }
@@ -245,6 +273,7 @@ public class GatewayTest {
         Map<String, ApiDesc> privilegesMap = new HashMap<>();
         privilegesMap.put(routeCode, new ApiDesc("/route/query/{routeCode}", GET, serviceCode, 10000));
         privilegesMap.put(mappingApiCode, new ApiDesc("/test/echo/mapping", GET, serviceCode, 10000));
+        privilegesMap.put("VOID-RESPONSE", new ApiDesc("/test/void", GET, serviceCode, 10000));
         privilege.setPrivileges(privilegesMap);
         TestCase.assertNull(context.getPrivilege(credential));
         privilegeApi.authorize(privilege).block();
@@ -333,7 +362,7 @@ public class GatewayTest {
         Plugin plugin = new Plugin();
         plugin.setName(PluginName.ADD_REQUEST_HEADERS);
         HeaderAddSchema schema = new HeaderAddSchema();
-        schema.getHeaders().put(ADDED_HEADER_NAME, "test-case");
+        schema.getHeaders().put(addedRequestHeader, "test-case");
         plugin.setSchema(schema);
         plugin.setTarget(serviceCode);
         plugin.setType(PluginType.REQUEST);
@@ -379,6 +408,14 @@ public class GatewayTest {
         route.setServiceCode(serviceCode);
         routeApi.add(route).block();
         waitUntilFound(() -> context.getRoute(mappingApiCode), "添加映射路由");
+
+        route = new Route();
+        route.setPath("/test/void");
+        route.setMethod(GET);
+        route.setCode("VOID-RESPONSE");
+        route.setServiceCode(serviceCode);
+        routeApi.add(route).block();
+        waitUntilFound(() -> context.getRoute("VOID-RESPONSE"), "添加无返回值路由");
     }
 
     private void addRuntimeService() {
