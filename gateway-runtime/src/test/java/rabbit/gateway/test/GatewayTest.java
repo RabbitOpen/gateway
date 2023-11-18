@@ -33,7 +33,6 @@ import rabbit.gateway.test.open.OpenApi;
 import rabbit.gateway.test.rest.*;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -303,13 +302,14 @@ public class GatewayTest {
     }
 
     private void resetCache() {
-        try {
-            Method initCache = context.getClass().getDeclaredMethod("initCache");
-            initCache.setAccessible(true);
-            initCache.invoke(context);
-        } catch (Exception e) {
-            throw new GateWayException(e);
-        }
+        Field serviceCache = getClassField(context.getClass(), "serviceCache");
+        Field routeCache = getClassField(context.getClass(), "routeCache");
+        Field privilegeCache = getClassField(context.getClass(), "privilegeCache");
+        Field pluginManagerCache = getClassField(context.getClass(), "pluginManagerCache");
+        ((Map)ReflectUtils.getValue(context, serviceCache)).clear();
+        ((Map)ReflectUtils.getValue(context, routeCache)).clear();
+        ((Map)ReflectUtils.getValue(context, privilegeCache)).clear();
+        ((Map)ReflectUtils.getValue(context, pluginManagerCache)).clear();
     }
 
     private void addRuntimePlugins() {

@@ -35,25 +35,30 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
     /**
      * 服务缓存
      */
-    private Map<String, GatewayService> serviceCache;
+    private Map<String, GatewayService> serviceCache = new ConcurrentHashMap<>(1024);
 
     /**
      * 路由缓存
      */
-    private Map<String, Route> routeCache;
+    private Map<String, Route> routeCache = new ConcurrentHashMap<>(4096);
 
     /**
      * 全新缓存
      */
-    private Map<String, PrivilegeDesc> privilegeCache;
+    private Map<String, PrivilegeDesc> privilegeCache = new ConcurrentHashMap<>(1024);
 
     /**
      * 插件缓存
      */
-    private Map<String, PluginManager> pluginManagerCache;
+    private Map<String, PluginManager> pluginManagerCache = new ConcurrentHashMap<>(1024);
+
+    @Autowired
+    protected EventService eventService;
 
     @Autowired
     protected R2dbcEntityTemplate template;
+
+    private boolean initialized = false;
 
     @Override
     public void reloadService(String serviceCode) {
@@ -115,8 +120,7 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
     /**
      * 加载缓存
      */
-    public void loadData4Cache() {
-        this.initCache();
+    public void initCache() {
         String keyName = "start";
         template.select(Route.class).all().collectList().flatMap(list -> Mono.create(ctx -> {
             list.forEach(r -> routeCache.put(r.getCode(), r));
@@ -156,16 +160,6 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
         privilegeCache.put(privilege.getCredential(), new PrivilegeDesc(privilege));
     }
 
-    /**
-     * 初始化cache
-     */
-    private void initCache() {
-        serviceCache = new ConcurrentHashMap<>(1024);
-        routeCache = new ConcurrentHashMap<>(4096);
-        privilegeCache = new ConcurrentHashMap<>(1024);
-        pluginManagerCache = new ConcurrentHashMap<>(1024);
-    }
-
     @Override
     public void reloadPlugins(String serviceCode) {
         Query query = Query.query(where("target").is(serviceCode));
@@ -188,14 +182,15 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
         return pluginManagerCache.get(serviceCode);
     }
 
-    @Autowired
-    private EventService eventService;
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         logger.info("prepared------------------");
-        if (null == this.serviceCache) {
-            this.loadData4Cache();
-            eventService.init();
+        if (initialized) {
+            return;
         }
+        initialized = true;
+        this.initCache();
+        eventService.init();
     }
+
 }
