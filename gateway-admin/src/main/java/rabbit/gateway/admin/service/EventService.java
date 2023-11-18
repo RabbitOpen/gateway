@@ -53,6 +53,9 @@ public class EventService implements ApplicationContextAware {
         this.context = applicationContext;
     }
 
+    /**
+     * 初始化
+     */
     public void init() {
         thread = new Thread(() -> {
             Query query = Query.empty().sort(Sort.by(Sort.Direction.DESC, "id")).limit(1).offset(0);
