@@ -74,6 +74,8 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
     public void deleteService(String serviceCode) {
         logger.info("service[{}] is deleted!", serviceCode);
         serviceCache.remove(serviceCode);
+        // 删除服务插件缓存
+        pluginManagerCache.remove(serviceCode);
     }
 
     @Override

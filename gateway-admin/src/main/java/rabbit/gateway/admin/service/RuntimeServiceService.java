@@ -5,6 +5,7 @@ import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.transaction.annotation.Transactional;
 import rabbit.gateway.common.context.ServiceContext;
+import rabbit.gateway.common.entity.Plugin;
 import rabbit.gateway.common.entity.Service;
 import rabbit.gateway.common.event.DeleteServiceEvent;
 import rabbit.gateway.common.event.ReloadServiceEvent;
@@ -62,8 +63,10 @@ public class RuntimeServiceService {
     @Transactional
     public Mono<Integer> deleteService(String serviceCode) {
         return eventService.addEvent(new DeleteServiceEvent(serviceCode))
-                .flatMap(e -> template.delete(Query.query(where("code").is(serviceCode)),
-                        Service.class));
+                // 删除服务
+                .flatMap(e -> template.delete(Query.query(where("code").is(serviceCode)), Service.class))
+                // 删除插件
+                .flatMap(integer -> template.delete(Query.query(where("target").is(serviceCode)), Plugin.class));
     }
 
     /**
