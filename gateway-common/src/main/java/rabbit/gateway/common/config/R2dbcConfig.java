@@ -87,6 +87,7 @@ public class R2dbcConfig extends AbstractR2dbcConfiguration {
      *
      * @return
      */
+    @Override
     protected List<Object> getCustomConverters() {
         List<Object> converterList = new ArrayList<>();
         converterList.add(TargetReader.INST);
