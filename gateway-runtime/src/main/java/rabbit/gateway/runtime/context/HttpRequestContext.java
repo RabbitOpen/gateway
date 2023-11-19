@@ -102,7 +102,7 @@ public class HttpRequestContext {
         if (!ObjectUtils.isEmpty(routeValue)) {
             return routeValue;
         }
-        return getRequest().getHeaders().getFirst(name);
+        return getRequestHeader(name);
     }
 
     /**
@@ -160,7 +160,7 @@ public class HttpRequestContext {
      * @return
      */
     public String getApiCode() {
-        return getRequest().getHeaders().getFirst(Headers.OPEN_API_CODE);
+        return getRequestHeader(Headers.OPEN_API_CODE);
     }
 
     /**
@@ -169,7 +169,7 @@ public class HttpRequestContext {
      * @return
      */
     public String getCredential() {
-        return getRequest().getHeaders().getFirst(Headers.OPEN_API_CREDENTIAL);
+        return getRequestHeader(Headers.OPEN_API_CREDENTIAL);
     }
 
     /**
@@ -178,7 +178,16 @@ public class HttpRequestContext {
      * @return
      */
     public String getRequestTime() {
-        return getRequest().getHeaders().getFirst(Headers.OPEN_API_REQUEST_TIME);
+        return getRequestHeader(Headers.OPEN_API_REQUEST_TIME);
+    }
+
+    /**
+     * 获取请求头
+     * @param headerName
+     * @return
+     */
+    public String getRequestHeader(String headerName) {
+        return getRequest().getHeaders().getFirst(headerName);
     }
 
     /**
@@ -187,7 +196,7 @@ public class HttpRequestContext {
      * @return
      */
     public String getRequestTimeSignature() {
-        return getRequest().getHeaders().getFirst(Headers.OPEN_API_REQUEST_TIME_SIGNATURE);
+        return getRequestHeader(Headers.OPEN_API_REQUEST_TIME_SIGNATURE);
     }
 
     /**

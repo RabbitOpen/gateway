@@ -62,12 +62,12 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
 
     @Override
     public void reloadService(String serviceCode) {
-        template.selectOne(Query.query(where("code").is(serviceCode)), Service.class)
-                .map(service -> {
-                    serviceCache.put(serviceCode, new GatewayService(service));
-                    logger.info("service[{}] is loaded!", serviceCode);
-                    return Mono.empty();
-                }).subscribe();
+        Query query = Query.query(where("code").is(serviceCode));
+        template.selectOne(query, Service.class).map(service -> {
+            serviceCache.put(serviceCode, new GatewayService(service));
+            logger.info("service[{}] is loaded!", serviceCode);
+            return Mono.empty();
+        }).subscribe();
     }
 
     @Override
@@ -85,12 +85,12 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
 
     @Override
     public void reloadPrivileges(String credential) {
-        template.selectOne(Query.query(where("credential").is(credential)), Privilege.class)
-                .map(privilege -> {
-                    cachePrivilege(privilege);
-                    logger.info("privileges[{}] is loaded!", credential);
-                    return Mono.empty();
-                }).subscribe();
+        Query query = Query.query(where("credential").is(credential));
+        template.selectOne(query, Privilege.class).map(privilege -> {
+            cachePrivilege(privilege);
+            logger.info("privileges[{}] is loaded!", credential);
+            return Mono.empty();
+        }).subscribe();
     }
 
     @Override
@@ -100,12 +100,11 @@ public class GateWayContext implements ServiceContext, RouteContext, PrivilegeCo
 
     @Override
     public void reloadRoute(String routeCode) {
-        template.selectOne(Query.query(where("code").is(routeCode)), Route.class)
-                .map(route -> {
-                    routeCache.put(routeCode, route);
-                    logger.info("route[{}] is loaded!", routeCode);
-                    return Mono.empty();
-                }).subscribe();
+        template.selectOne(Query.query(where("code").is(routeCode)), Route.class).map(route -> {
+            routeCache.put(routeCode, route);
+            logger.info("route[{}] is loaded!", routeCode);
+            return Mono.empty();
+        }).subscribe();
     }
 
     @Override
