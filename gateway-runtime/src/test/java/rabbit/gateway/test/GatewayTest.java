@@ -247,6 +247,9 @@ public class GatewayTest {
         route.setMethod(GET);
         route.setCode(undefinedRouteCode);
         route.setServiceCode(serviceCode);
+        Map<String, String> rules = new HashMap<>();
+        rules.put(Headers.OPEN_API_CODE, route.getCode());
+        route.setRules(rules);
         routeApi.add(route).block();
         waitUntilFound(() -> context.getRoute(undefinedRouteCode), "添加运行时路由");
     }
@@ -412,6 +415,7 @@ public class GatewayTest {
     }
 
     private void addRuntimeRoute() {
+        Map<String, String> rules = new HashMap<>();
         Route route = new Route();
         route.setPath("/route/query/{routeCode}");
         route.setMappingUri("/route/query/{routeCode}");
@@ -422,6 +426,8 @@ public class GatewayTest {
         rateLimit.setServerDefault(100L);
         rateLimit.setClients(new HashMap<>());
         route.setRequestRateLimit(rateLimit);
+        rules.put(Headers.OPEN_API_CODE, route.getCode());
+        route.setRules(rules);
         routeApi.add(route).block();
         waitUntilFound(() -> context.getRoute(routeCode), "添加运行时路由");
 
@@ -431,6 +437,8 @@ public class GatewayTest {
         route.setMethod(GET);
         route.setCode(mappingApiCode);
         route.setServiceCode(serviceCode);
+        rules.put(Headers.OPEN_API_CODE, route.getCode());
+        route.setRules(rules);
         routeApi.add(route).block();
         waitUntilFound(() -> context.getRoute(mappingApiCode), "添加映射路由");
 
@@ -439,6 +447,8 @@ public class GatewayTest {
         route.setMethod(GET);
         route.setCode("VOID-RESPONSE");
         route.setServiceCode(serviceCode);
+        rules.put(Headers.OPEN_API_CODE, route.getCode());
+        route.setRules(rules);
         routeApi.add(route).block();
         waitUntilFound(() -> context.getRoute("VOID-RESPONSE"), "添加无返回值路由");
 
@@ -447,6 +457,7 @@ public class GatewayTest {
         route.setMethod(POST);
         route.setCode("POST");
         route.setServiceCode(serviceCode);
+        rules.put(Headers.OPEN_API_CODE, route.getCode());
         routeApi.add(route).block();
         waitUntilFound(() -> context.getRoute("POST"), "添加POST路由");
     }

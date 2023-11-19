@@ -4,10 +4,16 @@ import io.r2dbc.spi.ConnectionFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
+import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration;
+import org.springframework.data.r2dbc.convert.MappingR2dbcConverter;
 import org.springframework.data.r2dbc.mapping.event.BeforeConvertCallback;
+import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
+import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
+import org.springframework.data.util.TypeInformation;
 import org.springframework.util.ObjectUtils;
 import rabbit.discovery.api.common.utils.JsonUtils;
 import rabbit.gateway.common.BaseEntity;
@@ -21,6 +27,9 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+
+import static rabbit.gateway.common.config.ConverterManager.addMapConverter;
+import static rabbit.gateway.common.config.ConverterManager.getConverter;
 
 @Configuration
 public class R2dbcConfig extends AbstractR2dbcConfiguration {
@@ -45,11 +54,39 @@ public class R2dbcConfig extends AbstractR2dbcConfiguration {
     }
 
     /**
+     * 自定义r2dbc类型转换器
+     *
+     * @param context
+     * @param conversions
+     * @return
+     */
+    @Bean
+    public MappingR2dbcConverter converter(MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> context,
+                                           CustomConversions conversions) {
+        addMapConverter(String.class, String.class);
+        addMapConverter(String.class, ApiDesc.class);
+        return new MappingR2dbcConverter(context, conversions) {
+            @Override
+            public Object readValue(Object value, TypeInformation<?> type) {
+                if (!ConverterManager.contains(type)) {
+                    return super.readValue(value, type);
+                } else {
+                    return getConverter(type).read(value.toString());
+                }
+            }
+        };
+    }
+
+    @Override
+    public ConnectionFactory connectionFactory() {
+        return null;
+    }
+
+    /**
      * 自定义类型转换器
      *
      * @return
      */
-    @Override
     protected List<Object> getCustomConverters() {
         List<Object> converterList = new ArrayList<>();
         converterList.add(TargetReader.INST);
@@ -280,8 +317,4 @@ public class R2dbcConfig extends AbstractR2dbcConfiguration {
         }
     }
 
-    @Override
-    public ConnectionFactory connectionFactory() {
-        return null;
-    }
 }
