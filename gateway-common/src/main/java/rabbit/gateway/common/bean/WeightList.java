@@ -77,7 +77,7 @@ public class WeightList<T extends Weight> {
         if (numbers.isEmpty()) {
             throw new GateWayException("空数组");
         }
-        if (numbers.stream().filter(v -> v == 0).count() != 0) {
+        if (numbers.stream().filter(v -> 0 == v).count() != 0) {
             throw new GateWayException("权重不能为0");
         }
         if (1 == numbers.size()) {

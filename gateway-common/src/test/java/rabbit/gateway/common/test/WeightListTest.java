@@ -6,14 +6,18 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import rabbit.gateway.common.Weight;
 import rabbit.gateway.common.bean.WeightList;
+import rabbit.gateway.common.exception.GateWayException;
 
 import java.util.Arrays;
+import java.util.function.Supplier;
 
 @RunWith(JUnit4.class)
 public class WeightListTest {
 
     @Test
     public void maxFactorTest() {
+        assertException(GateWayException.class, () -> WeightList.maxFactor(Arrays.asList(0L, 6L, 9L, 15L)));
+        assertException(GateWayException.class, () -> WeightList.maxFactor(Arrays.asList()));
         TestCase.assertEquals(3, WeightList.maxFactor(Arrays.asList(3L, 6L, 9L, 15L)));
         TestCase.assertEquals(31, WeightList.maxFactor(Arrays.asList(31L)));
 
@@ -24,6 +28,15 @@ public class WeightListTest {
         TestCase.assertEquals("a", list.next().getName());
         TestCase.assertEquals("a", list.next().getName());
         TestCase.assertEquals("b", list.next().getName());
+    }
+
+    private void assertException(Class<? extends Exception> clz, Supplier<?> supplier) {
+        try {
+            supplier.get();
+            throw new RuntimeException();
+        } catch (Exception e) {
+            TestCase.assertEquals(clz, e.getClass());
+        }
     }
 
     class Sample implements Weight {

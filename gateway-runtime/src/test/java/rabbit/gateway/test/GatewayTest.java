@@ -25,18 +25,12 @@ import rabbit.gateway.common.entity.*;
 import rabbit.gateway.common.exception.GateWayException;
 import rabbit.gateway.runtime.context.*;
 import rabbit.gateway.runtime.plugin.RuntimePlugin;
-import rabbit.gateway.runtime.plugin.request.AddRequestHeaderPlugin;
-import rabbit.gateway.runtime.plugin.request.AuthenticationPlugin;
-import rabbit.gateway.runtime.plugin.request.RemoveRequestHeaderPlugin;
-import rabbit.gateway.runtime.plugin.request.RequestMappingPlugin;
+import rabbit.gateway.runtime.plugin.request.*;
 import rabbit.gateway.test.open.OpenApi;
 import rabbit.gateway.test.rest.*;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
@@ -319,6 +313,7 @@ public class GatewayTest {
         createRemoveRequestHeadersPlugin();
         createRequestMappingPlugin();
         createAddResponseHeadersPlugin();
+        createRequestRateLimitPlugin();
         waitUntilFinished(() -> {
             PluginManager pluginManager = context.getPluginManager(serviceCode);
             if (null == pluginManager) {
@@ -328,12 +323,27 @@ public class GatewayTest {
             List<RuntimePlugin> list = ReflectUtils.getValue(pluginManager, field);
             if (4 == list.size()) {
                 TestCase.assertTrue(list.get(0) instanceof AuthenticationPlugin);
-                TestCase.assertTrue(list.get(1) instanceof AddRequestHeaderPlugin);
-                TestCase.assertTrue(list.get(2) instanceof RemoveRequestHeaderPlugin);
-                TestCase.assertTrue(list.get(3) instanceof RequestMappingPlugin);
+                TestCase.assertTrue(list.get(1) instanceof RequestRateLimitPlugin);
+                TestCase.assertTrue(list.get(2) instanceof AddRequestHeaderPlugin);
+                TestCase.assertTrue(list.get(3) instanceof RemoveRequestHeaderPlugin);
+                TestCase.assertTrue(list.get(4) instanceof RequestMappingPlugin);
             }
-            return list.size() == 4;
+            return list.size() == 5;
         }, "添加服务插件");
+    }
+
+    private void createRequestRateLimitPlugin() {
+        Plugin plugin = new Plugin();
+        plugin.setName(PluginName.REQUEST_RATE_LIMIT);
+        RequestRateLimit schema = new RequestRateLimit();
+        schema.setServerDefault(100L);
+        HashMap<String, Long> clients = new HashMap<>();
+        clients.put(credential, 10L);
+        schema.setClients(clients);
+        plugin.setSchema(schema);
+        plugin.setTarget(serviceCode);
+        plugin.setType(PluginType.REQUEST);
+        pluginApi.replace(plugin).block();
     }
 
     private void createAddResponseHeadersPlugin() {
@@ -358,6 +368,11 @@ public class GatewayTest {
 
     private void createRemoveRequestHeadersPlugin() {
         Plugin plugin = new Plugin();
+        HeaderRemoveSchema removeSchema = new HeaderRemoveSchema();
+        HashSet<String> headers = new HashSet<>();
+        headers.add("header-that-you-want-to-remove");
+        removeSchema.setHeaders(headers);
+        plugin.setSchema(removeSchema);
         plugin.setName(PluginName.REMOVE_REQUEST_HEADERS);
         plugin.setTarget(serviceCode);
         plugin.setType(PluginType.REQUEST);
@@ -403,7 +418,10 @@ public class GatewayTest {
         route.setMethod(GET);
         route.setCode(routeCode);
         route.setServiceCode(serviceCode);
-        route.setRequestRateLimit(new RequestRateLimit());
+        RequestRateLimit rateLimit = new RequestRateLimit();
+        rateLimit.setServerDefault(100L);
+        rateLimit.setClients(new HashMap<>());
+        route.setRequestRateLimit(rateLimit);
         routeApi.add(route).block();
         waitUntilFound(() -> context.getRoute(routeCode), "添加运行时路由");
 

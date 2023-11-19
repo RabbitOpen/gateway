@@ -1,9 +1,11 @@
 package rabbit.gateway.common.bean;
 
+import rabbit.gateway.common.Schema;
+
 import java.util.HashMap;
 import java.util.Map;
 
-public class RequestRateLimit {
+public class RequestRateLimit implements Schema {
 
     /**
      * 服务侧限流

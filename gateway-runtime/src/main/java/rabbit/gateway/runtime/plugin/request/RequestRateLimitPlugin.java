@@ -23,8 +23,25 @@ public class RequestRateLimitPlugin extends RuntimePlugin {
 
     @Override
     protected Mono<ResponseEntity<String>> executeInternal(HttpRequestContext requestContext) {
+        // 获取服务侧限流
+        long serverLimit = getServerLimit(requestContext);
+        return Mono.empty();
+    }
+
+    /**
+     * 获取服务侧限流
+     * @param requestContext
+     * @return
+     */
+    private long getServerLimit(HttpRequestContext requestContext) {
         RequestRateLimit globalLimit = getSchema();
         RequestRateLimit routeLimit = requestContext.getRoute().getRequestRateLimit();
-        return Mono.empty();
+        long globalServerLimit = globalLimit.getServerDefault();
+        Long routeServerLimit = routeLimit.getServerDefault();
+        if (null == routeServerLimit) {
+            return globalServerLimit;
+        } else {
+            return Math.min(globalServerLimit, routeServerLimit);
+        }
     }
 }
