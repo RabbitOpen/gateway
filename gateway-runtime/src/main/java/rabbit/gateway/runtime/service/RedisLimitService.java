@@ -1,6 +1,7 @@
 package rabbit.gateway.runtime.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -12,7 +13,7 @@ import javax.annotation.PostConstruct;
 import java.util.Arrays;
 
 @Service
-//@ConditionalOnMissingBean(MemoryLimitService.class)
+@ConditionalOnMissingBean(MemoryLimitService.class)
 public class RedisLimitService extends RedisTemplate<String, String> implements LimitService {
 
     @Autowired
