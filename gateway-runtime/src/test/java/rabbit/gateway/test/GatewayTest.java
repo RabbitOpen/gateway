@@ -476,6 +476,8 @@ public class GatewayTest {
         Target t1 = new Target("127.0.0.1", 12800, 1);
         t1.setCaCertificate("caCertificate");
         t1.setCertificate("certificate");
+        t1.setKey("key");
+        t1.setPassword("password");
         upstreams.add(t1);
         Target t2 = new Target("localhost", 12800, 2);
         t2.setCaCertificate("caCertificate");

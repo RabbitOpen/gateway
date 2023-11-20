@@ -23,14 +23,18 @@ public class Target implements Weight {
      */
     private String certificate;
 
+    private String key;
+
+    private String password;
+
     public Target() {
     }
 
     public Target(String host, int port, long weight) {
         this();
-        this.host = host;
-        this.port = port;
-        this.weight = weight;
+        setHost(host);
+        setPort(port);
+        setWeight(weight);
     }
 
     @Override
@@ -73,5 +77,21 @@ public class Target implements Weight {
 
     public void setCertificate(String certificate) {
         this.certificate = certificate;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }

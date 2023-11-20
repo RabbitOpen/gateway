@@ -1,6 +1,7 @@
 package rabbit.gateway.runtime.context;
 
 import io.netty.channel.ChannelOption;
+import io.netty.handler.ssl.SslContextBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.buffer.DataBufferUtils;
@@ -9,17 +10,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorResourceFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
+import rabbit.discovery.api.common.utils.HexUtils;
 import rabbit.gateway.common.bean.Target;
+import rabbit.gateway.common.exception.GateWayException;
 import reactor.core.publisher.Mono;
 import reactor.netty.resources.ConnectionProvider;
 import reactor.netty.resources.LoopResources;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.net.ssl.SSLException;
+import java.io.ByteArrayInputStream;
 import java.time.Duration;
+
+import static rabbit.gateway.common.Protocol.HTTPS;
 
 @Component
 public class HttpClientFactory {
@@ -65,7 +73,7 @@ public class HttpClientFactory {
     public Mono<ResponseEntity<String>> execute(HttpRequestContext context) {
         GatewayService service = context.getService();
         Target target = service.getTarget();
-        WebClient.RequestBodyUriSpec webRequest = getCachedWebClient(service, target).method(context.getRequest().getMethod());
+        WebClient.RequestBodyUriSpec webRequest = webClient.method(context.getRequest().getMethod());
         addRequestHeaders(context, webRequest, target);
         webRequest.uri(uriBuilder -> uriBuilder.scheme(service.getProtocol().name().toLowerCase())
                 .host(target.getHost()).port(target.getPort())
@@ -89,6 +97,7 @@ public class HttpClientFactory {
 
     /**
      * 读取响应
+     *
      * @param r
      * @return
      */
@@ -121,7 +130,32 @@ public class HttpClientFactory {
                 .concat(Integer.toString(target.getPort()))));
     }
 
+
+    /**
+     * https 协议下使用以下方案
+     */
+    /**
     private WebClient getCachedWebClient(GatewayService service, Target target) {
+        if (HTTPS == service.getProtocol()) {
+            ReactorClientHttpConnector connector = new ReactorClientHttpConnector(resourceFactory, httpClient -> {
+                SslContextBuilder builder = SslContextBuilder.forClient();
+                return httpClient.secure(t -> {
+                    if (!ObjectUtils.isEmpty(target.getCaCertificate())) {
+                        builder.trustManager(new ByteArrayInputStream(HexUtils.toBytes(target.getCaCertificate())));
+                    }
+                    if (!ObjectUtils.isEmpty(target.getCertificate())) {
+                        builder.keyManager(new ByteArrayInputStream(HexUtils.toBytes(target.getCertificate())),
+                                new ByteArrayInputStream(target.getKey().getBytes()), target.getPassword());
+                    }
+                    try {
+                        t.sslContext(builder.build());
+                    } catch (SSLException e) {
+                        throw new GateWayException(e);
+                    }
+                });
+            });
+            return WebClient.builder().exchangeStrategies(strategies).clientConnector(connector).build();
+        }
         return webClient;
-    }
+    }*/
 }
