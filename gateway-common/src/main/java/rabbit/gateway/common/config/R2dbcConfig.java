@@ -4,12 +4,12 @@ import io.r2dbc.spi.ConnectionFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration;
 import org.springframework.data.r2dbc.convert.MappingR2dbcConverter;
+import org.springframework.data.r2dbc.convert.R2dbcCustomConversions;
 import org.springframework.data.r2dbc.mapping.event.BeforeConvertCallback;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
@@ -62,7 +62,7 @@ public class R2dbcConfig extends AbstractR2dbcConfiguration {
      */
     @Bean
     public MappingR2dbcConverter converter(MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> context,
-                                           CustomConversions conversions) {
+                                           R2dbcCustomConversions conversions) {
         addMapConverter(String.class, String.class);
         addMapConverter(String.class, ApiDesc.class);
         return new MappingR2dbcConverter(context, conversions) {

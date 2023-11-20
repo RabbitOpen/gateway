@@ -8,9 +8,14 @@ import java.util.Map;
 public class RequestRateLimit implements Schema {
 
     /**
-     * 服务侧限流
+     * 服务侧默认限流
      */
     private Long serverDefault = 1000L;
+
+    /**
+     * 客户侧默认限流
+     */
+    private Long clientDefault = 200L;
 
     /**
      * 客户侧限流，key为 credential
@@ -31,5 +36,13 @@ public class RequestRateLimit implements Schema {
 
     public void setClients(Map<String, Long> clients) {
         this.clients = clients;
+    }
+
+    public Long getClientDefault() {
+        return clientDefault;
+    }
+
+    public void setClientDefault(Long clientDefault) {
+        this.clientDefault = clientDefault;
     }
 }
