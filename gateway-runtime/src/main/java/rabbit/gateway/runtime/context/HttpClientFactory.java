@@ -1,7 +1,6 @@
 package rabbit.gateway.runtime.context;
 
 import io.netty.channel.ChannelOption;
-import io.netty.handler.ssl.SslContextBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.buffer.DataBufferUtils;
@@ -10,24 +9,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorResourceFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.util.ObjectUtils;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
-import rabbit.discovery.api.common.utils.HexUtils;
 import rabbit.gateway.common.bean.Target;
-import rabbit.gateway.common.exception.GateWayException;
 import reactor.core.publisher.Mono;
 import reactor.netty.resources.ConnectionProvider;
 import reactor.netty.resources.LoopResources;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.net.ssl.SSLException;
-import java.io.ByteArrayInputStream;
 import java.time.Duration;
-
-import static rabbit.gateway.common.Protocol.HTTPS;
 
 @Component
 public class HttpClientFactory {
