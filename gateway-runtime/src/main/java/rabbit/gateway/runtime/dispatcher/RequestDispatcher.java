@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -110,8 +111,11 @@ public class RequestDispatcher implements WebFilter {
                 response.getHeaders().set(key, value.get(0));
             });
             byte[] bytes = getResponseBodyBytes(responseEntity);
-            DataBuffer wrap = response.bufferFactory().wrap(bytes);
-            return response.writeWith(Mono.just(wrap));
+            DataBuffer buffer = response.bufferFactory().wrap(bytes);
+            return response.writeWith(Mono.just(buffer)).then(Mono.defer(() -> {
+                DataBufferUtils.release(buffer);
+                return Mono.empty();
+            }));
         });
     }
 
