@@ -26,13 +26,9 @@ public class AddResponseHeaderPlugin extends RuntimePlugin {
     protected Mono<ResponseEntity<String>> executeInternal(HttpRequestContext requestContext) {
         HeaderAddSchema schema = getSchema();
         ResponseEntity<String> response = requestContext.getResponseEntity();
-        if (null != schema) {
-            HttpHeaders headers = new HttpHeaders();
-            response.getHeaders().forEach(headers::put);
-            schema.getHeaders().forEach(headers::set);
-            return Mono.just(new ResponseEntity<>(response.getBody(), headers, response.getStatusCode()));
-        } else {
-            return Mono.just(response);
-        }
+        HttpHeaders headers = new HttpHeaders();
+        response.getHeaders().forEach(headers::put);
+        schema.getHeaders().forEach(headers::set);
+        return Mono.just(new ResponseEntity<>(response.getBody(), headers, response.getStatusCode()));
     }
 }

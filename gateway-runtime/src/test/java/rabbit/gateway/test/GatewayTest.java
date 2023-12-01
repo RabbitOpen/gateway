@@ -30,7 +30,10 @@ import rabbit.gateway.test.open.OpenApi;
 import rabbit.gateway.test.rest.*;
 
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
@@ -371,11 +374,6 @@ public class GatewayTest {
 
     private void createRemoveRequestHeadersPlugin() {
         Plugin plugin = new Plugin();
-        HeaderRemoveSchema removeSchema = new HeaderRemoveSchema();
-        HashSet<String> headers = new HashSet<>();
-        headers.add("header-that-you-want-to-remove");
-        removeSchema.setHeaders(headers);
-        plugin.setSchema(removeSchema);
         plugin.setName(PluginName.REMOVE_REQUEST_HEADERS);
         plugin.setTarget(serviceCode);
         plugin.setType(PluginType.REQUEST);

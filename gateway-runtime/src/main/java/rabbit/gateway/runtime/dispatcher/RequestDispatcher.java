@@ -24,6 +24,8 @@ import rabbit.gateway.runtime.context.HttpRequestContext;
 import rabbit.gateway.runtime.context.PluginManager;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.Charset;
+
 /**
  * 核心dispatcher
  */
@@ -55,7 +57,7 @@ public class RequestDispatcher implements WebFilter {
                 }
                 ServerHttpResponse response = exchange.getResponse();
                 response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
-                byte[] errorBytes = JsonUtils.writeObject(Result.failed(e.getMessage())).getBytes();
+                byte[] errorBytes = JsonUtils.writeObject(Result.failed(e.getMessage())).getBytes(Charset.forName("UTF8"));
                 DataBuffer wrap = response.bufferFactory().wrap(errorBytes);
                 return response.writeWith(Mono.just(wrap));
             });
@@ -131,7 +133,7 @@ public class RequestDispatcher implements WebFilter {
         if (ObjectUtils.isEmpty(body)) {
             bytes = new byte[0];
         } else {
-            bytes = body.getBytes();
+            bytes = body.getBytes(Charset.forName("UTF8"));
         }
         return bytes;
     }
