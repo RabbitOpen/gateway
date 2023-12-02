@@ -16,7 +16,7 @@ public class Event  {
     private Long id;
 
     /**
-     * 创建时间
+     * 创建时间, 清理数据时使用
      */
     @Column("created_time")
     private Long createdTime;
