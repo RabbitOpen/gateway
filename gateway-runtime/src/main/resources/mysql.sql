@@ -9,7 +9,6 @@ SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS `event`;
 CREATE TABLE `event`  (
   `id` bigint(0) NOT NULL AUTO_INCREMENT COMMENT '主键id',
-  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT '事件名',
   `event` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT '事件内容',
   `created_time` bigint(0) NOT NULL COMMENT '生成时间',
   PRIMARY KEY (`id`) USING BTREE

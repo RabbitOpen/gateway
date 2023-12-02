@@ -44,7 +44,6 @@ public class EventService implements ApplicationContextAware {
         Event event = new Event();
         event.setGateWayEvent(e);
         event.setCreatedTime(System.currentTimeMillis());
-        event.setName(e.getClass().getName());
         return template.insert(event);
     }
 

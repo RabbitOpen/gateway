@@ -2,7 +2,7 @@
 
 
 -- 事件表
-CREATE TABLE EVENT (id IDENTITY PRIMARY KEY, name VARCHAR(100), event VARCHAR(1024), created_time BIGINT);
+CREATE TABLE EVENT (id IDENTITY PRIMARY KEY,  event VARCHAR(1024), created_time BIGINT);
 
 -- 插件表
 CREATE TABLE plugin (id varchar(40) PRIMARY KEY, name varchar(60), type varchar(20), 

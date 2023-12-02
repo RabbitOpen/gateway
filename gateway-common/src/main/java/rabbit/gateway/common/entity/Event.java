@@ -21,11 +21,6 @@ public class Event  {
     @Column("created_time")
     private Long createdTime;
 
-    /**
-     * 事件名字
-     */
-    @Column("name")
-    private String name;
 
     /**
      * 事件内容
@@ -47,14 +42,6 @@ public class Event  {
 
     public void setCreatedTime(Long createdTime) {
         this.createdTime = createdTime;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public GateWayEvent getGateWayEvent() {
