@@ -58,8 +58,11 @@ public class RequestDispatcher implements WebFilter {
                 ServerHttpResponse response = exchange.getResponse();
                 response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
                 byte[] errorBytes = JsonUtils.writeObject(Result.failed(e.getMessage())).getBytes(Charset.forName("UTF8"));
-                DataBuffer wrap = response.bufferFactory().wrap(errorBytes);
-                return response.writeWith(Mono.just(wrap));
+                DataBuffer buffer = response.bufferFactory().wrap(errorBytes);
+                return response.writeWith(Mono.just(buffer)).then(Mono.defer(() -> {
+                    DataBufferUtils.release(buffer);
+                    return Mono.empty();
+                }));
             });
         } else {
             HttpRequestContext context = new HttpRequestContext(exchange, gateWayContext);
