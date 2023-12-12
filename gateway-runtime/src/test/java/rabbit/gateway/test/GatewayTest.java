@@ -41,7 +41,6 @@ import java.util.function.Supplier;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.DEFINED_PORT;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
-import static rabbit.gateway.common.ErrorType.GATEWAY;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = SpringBootTestEntry.class, webEnvironment = DEFINED_PORT)
@@ -206,7 +205,6 @@ public class GatewayTest {
             throw new RuntimeException("");
         } catch (Exception e) {
             Result err = JsonUtils.readValue(e.getMessage(), Result.class);
-            TestCase.assertEquals(GATEWAY, err.getErrorType());
             TestCase.assertTrue(err.getMessage().contains("模拟异常"));
             logger.info("用例 [模拟异常] 验证成功");
         }
@@ -224,9 +222,7 @@ public class GatewayTest {
             openApi.wrongPath().block();
             throw new RuntimeException("");
         } catch (Exception e) {
-            Result err = JsonUtils.readValue(e.getMessage(), Result.class);
-            TestCase.assertEquals(GATEWAY, err.getErrorType());
-            TestCase.assertTrue(err.getMessage().contains("越权访问"));
+            TestCase.assertTrue(e.getMessage().contains("越权访问"));
             logger.info("用例 [越权访问] 验证成功");
         }
     }
@@ -236,9 +232,7 @@ public class GatewayTest {
             openApi.undefinedRoute().block();
             throw new RuntimeException("");
         } catch (Exception e) {
-            Result err = JsonUtils.readValue(e.getMessage(), Result.class);
-            TestCase.assertEquals(GATEWAY, err.getErrorType());
-            TestCase.assertTrue(err.getMessage().contains("没有对应接口的访问权限"));
+            TestCase.assertTrue(e.getMessage().contains("没有对应接口的访问权限"));
             logger.info("用例 [访问没权限的接口] 验证成功");
         }
     }
@@ -262,9 +256,7 @@ public class GatewayTest {
             openApi.undefinedRoute().block();
             throw new RuntimeException("");
         } catch (Exception e) {
-            Result err = JsonUtils.readValue(e.getMessage(), Result.class);
-            TestCase.assertEquals(GATEWAY, err.getErrorType());
-            TestCase.assertTrue(err.getMessage().contains("未定义的路由"));
+            TestCase.assertTrue(e.getMessage().contains("未定义的路由"));
             logger.info("用例 [访问不存在的路由] 验证成功");
         }
     }
@@ -294,9 +286,7 @@ public class GatewayTest {
             openApi.queryRoute(routeCode).block();
             throw new RuntimeException("");
         } catch (Exception e) {
-            Result err = JsonUtils.readValue(e.getMessage(), Result.class);
-            TestCase.assertEquals(GATEWAY, err.getErrorType());
-            TestCase.assertTrue(err.getMessage().contains("没有对应接口的访问权限"));
+            TestCase.assertTrue(e.getMessage().contains("没有对应接口的访问权限"));
             logger.info("用例 [访问受限] 验证成功");
         }
     }

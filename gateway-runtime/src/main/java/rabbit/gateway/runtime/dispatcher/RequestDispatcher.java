@@ -67,7 +67,7 @@ public class RequestDispatcher implements WebFilter {
         } else {
             HttpRequestContext context = new HttpRequestContext(exchange, gateWayContext);
             return Mono.defer(() -> dispatchOpenApiRequest(context)).onErrorResume(e -> {
-                String result = JsonUtils.writeObject(Result.failed(e.getMessage()));
+                String result = e.getMessage();
                 int statusCode = HttpStatus.INTERNAL_SERVER_ERROR.value();
                 if (e instanceof GateWayException) {
                     statusCode = ((GateWayException) e).getStatusCode();
