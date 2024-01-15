@@ -2,18 +2,16 @@ package rabbit.gateway.runtime.context;
 
 import io.netty.channel.ChannelOption;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorResourceFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import rabbit.gateway.common.bean.Target;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
 import reactor.netty.resources.ConnectionProvider;
 import reactor.netty.resources.LoopResources;
 
@@ -62,7 +60,7 @@ public class HttpClientFactory {
      * @param context
      * @return
      */
-    public Mono<ResponseEntity<String>> execute(HttpRequestContext context) {
+    public Flux<ResponseEntity<String>> execute(HttpRequestContext context) {
         GatewayService service = context.getService();
         Target target = service.getTarget();
         WebClient.RequestBodyUriSpec webRequest = webClient.method(context.getRequest().getMethod());
@@ -77,25 +75,18 @@ public class HttpClientFactory {
             dataBuffer.read(bytes);
             DataBufferUtils.release(dataBuffer);
             return bytes;
-        }).flatMap(bodyBytes -> {
+        }).flatMapMany(bodyBytes -> {
             webRequest.bodyValue(bodyBytes);        // 有body
-            return getResponse(webRequest);
-        }).switchIfEmpty(getResponse(webRequest));  // 没有body
+            return readResponse(webRequest);
+        }).switchIfEmpty(readResponse(webRequest));  // 没有body
     }
 
-    private Mono<ResponseEntity<String>> getResponse(WebClient.RequestBodyUriSpec webRequest) {
-        return Mono.defer(() -> webRequest.exchangeToMono(this::readResponse));
-    }
-
-    /**
-     * 读取响应
-     *
-     * @param r
-     * @return
-     */
-    private Mono<ResponseEntity<String>> readResponse(ClientResponse r) {
-        return r.bodyToMono(ByteArrayResource.class).map(bytes -> new ResponseEntity<>(new String(bytes.getByteArray()), r.headers().asHttpHeaders(), r.statusCode()))
-                .switchIfEmpty(Mono.just(new ResponseEntity<>("", r.headers().asHttpHeaders(), r.statusCode())));
+    private Flux<ResponseEntity<String>> readResponse(WebClient.RequestBodyUriSpec webRequest) {
+        return webRequest.exchangeToFlux(r -> {
+            ResponseEntity<String> defaultResponse = new ResponseEntity<>("", r.headers().asHttpHeaders(), r.statusCode());
+            return r.bodyToFlux(String.class).map(b -> (ResponseEntity<String>) new ResponseEntity(b, r.headers().asHttpHeaders(), r.statusCode()))
+                    .switchIfEmpty(Flux.just(defaultResponse));
+        });
     }
 
     /**
@@ -127,27 +118,27 @@ public class HttpClientFactory {
      * https 协议下使用以下方案
      */
     /**
-    private WebClient getCachedWebClient(GatewayService service, Target target) {
-        if (HTTPS == service.getProtocol()) {
-            ReactorClientHttpConnector connector = new ReactorClientHttpConnector(resourceFactory, httpClient -> {
-                SslContextBuilder builder = SslContextBuilder.forClient();
-                return httpClient.secure(t -> {
-                    if (!ObjectUtils.isEmpty(target.getCaCertificate())) {
-                        builder.trustManager(new ByteArrayInputStream(HexUtils.toBytes(target.getCaCertificate())));
-                    }
-                    if (!ObjectUtils.isEmpty(target.getCertificate())) {
-                        builder.keyManager(new ByteArrayInputStream(HexUtils.toBytes(target.getCertificate())),
-                                new ByteArrayInputStream(target.getKey().getBytes()), target.getPassword());
-                    }
-                    try {
-                        t.sslContext(builder.build());
-                    } catch (SSLException e) {
-                        throw new GateWayException(e);
-                    }
-                });
-            });
-            return WebClient.builder().exchangeStrategies(strategies).clientConnector(connector).build();
-        }
-        return webClient;
-    }*/
+     private WebClient getCachedWebClient(GatewayService service, Target target) {
+     if (HTTPS == service.getProtocol()) {
+     ReactorClientHttpConnector connector = new ReactorClientHttpConnector(resourceFactory, httpClient -> {
+     SslContextBuilder builder = SslContextBuilder.forClient();
+     return httpClient.secure(t -> {
+     if (!ObjectUtils.isEmpty(target.getCaCertificate())) {
+     builder.trustManager(new ByteArrayInputStream(HexUtils.toBytes(target.getCaCertificate())));
+     }
+     if (!ObjectUtils.isEmpty(target.getCertificate())) {
+     builder.keyManager(new ByteArrayInputStream(HexUtils.toBytes(target.getCertificate())),
+     new ByteArrayInputStream(target.getKey().getBytes()), target.getPassword());
+     }
+     try {
+     t.sslContext(builder.build());
+     } catch (SSLException e) {
+     throw new GateWayException(e);
+     }
+     });
+     });
+     return WebClient.builder().exchangeStrategies(strategies).clientConnector(connector).build();
+     }
+     return webClient;
+     }*/
 }

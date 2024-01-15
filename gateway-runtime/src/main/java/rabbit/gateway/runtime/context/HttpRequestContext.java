@@ -1,5 +1,6 @@
 package rabbit.gateway.runtime.context;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -50,6 +51,11 @@ public class HttpRequestContext {
      */
     private String requestPath;
 
+    /**
+     * header是否已经输出过了
+     */
+    private boolean responseHeaderHandled = false;
+
     public HttpRequestContext(ServerWebExchange exchange, GateWayContext context) {
         this.exchange = exchange;
         this.gateWayContext = context;
@@ -68,6 +74,7 @@ public class HttpRequestContext {
 
     /**
      * 加载路由
+     *
      * @return
      */
     public void loadRoute() {
@@ -183,6 +190,7 @@ public class HttpRequestContext {
 
     /**
      * 获取请求头
+     *
      * @param headerName
      * @return
      */
@@ -245,5 +253,27 @@ public class HttpRequestContext {
         return gateWayContext.getPrivilege(getCredential());
     }
 
+    /**
+     * 写response header
+     */
+    public void writeResponseHeaders() {
+        if (responseHeaderHandled) {
+            return;
+        }
+        ServerHttpResponse httpResponse = getResponse();
+        // 填充状态码
+        httpResponse.setRawStatusCode(responseEntity.getStatusCodeValue());
+        // 填充响应头
+        responseEntity.getHeaders().forEach((key, value) -> {
+            if (HttpHeaders.CONTENT_LENGTH.equalsIgnoreCase(key)) {
+                return;
+            }
+            httpResponse.getHeaders().set(key, value.get(0));
+        });
+        responseHeaderHandled = true;
+    }
 
+    public boolean isResponseHeaderHandled() {
+        return responseHeaderHandled;
+    }
 }

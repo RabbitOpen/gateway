@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -22,6 +21,7 @@ import rabbit.gateway.runtime.context.GateWayContext;
 import rabbit.gateway.runtime.context.HttpClientFactory;
 import rabbit.gateway.runtime.context.HttpRequestContext;
 import rabbit.gateway.runtime.context.PluginManager;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.Charset;
@@ -89,12 +89,17 @@ public class RequestDispatcher implements WebFilter {
         context.loadRoute();
         context.loadService();
         PluginManager pluginManager = gateWayContext.getPluginManager(context.getService().getCode());
-        return pluginManager.handleRequest(context)
-                .flatMap(r -> responseData(context))                            // 如果插件有输出则直接输出响应
-                .switchIfEmpty(Mono.defer(() -> clientFactory.execute(context)) // 调用服务
-                        .map(context::setResponseEntity)                        // 设置response
-                        // 执行response 插件 然后输出结果
-                        .flatMap(ctx -> pluginManager.handleResponse(ctx).flatMap(r -> responseData(context))));
+        return pluginManager.handleRequest(context).flatMap(r -> responseData(context))    // 如果插件有输出则直接输出响应
+                .switchIfEmpty(Flux.defer(() -> clientFactory.execute(context).map(context::setResponseEntity)
+                        .flatMap(ctx -> {
+                            if (ctx.isResponseHeaderHandled()) {
+                                return responseData(context);
+                            } else {
+                                // 只有第一波请求才执行response 插件
+                                Mono<ResponseEntity<String>> mono = pluginManager.handleResponse(ctx);
+                                return mono.flatMap(r -> responseData(context));
+                            }
+                        })).then());
     }
 
     /**
@@ -104,18 +109,9 @@ public class RequestDispatcher implements WebFilter {
      */
     private Mono<Void> responseData(HttpRequestContext context) {
         return Mono.defer(() -> {
+            context.writeResponseHeaders();
             ServerHttpResponse response = context.getResponse();
-            ResponseEntity<String> responseEntity = context.getResponseEntity();
-            // 填充状态码
-            response.setRawStatusCode(responseEntity.getStatusCodeValue());
-            // 填充响应头
-            responseEntity.getHeaders().forEach((key, value) -> {
-                if (HttpHeaders.CONTENT_LENGTH.equalsIgnoreCase(key)) {
-                    return;
-                }
-                response.getHeaders().set(key, value.get(0));
-            });
-            byte[] bytes = getResponseBodyBytes(responseEntity);
+            byte[] bytes = getResponseBodyBytes(context.getResponseEntity());
             DataBuffer buffer = response.bufferFactory().wrap(bytes);
             return response.writeWith(Mono.just(buffer)).then(Mono.defer(() -> {
                 DataBufferUtils.release(buffer);
@@ -140,4 +136,5 @@ public class RequestDispatcher implements WebFilter {
         }
         return bytes;
     }
+
 }
