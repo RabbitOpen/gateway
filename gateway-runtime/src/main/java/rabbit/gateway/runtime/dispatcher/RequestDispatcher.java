@@ -94,7 +94,7 @@ public class RequestDispatcher implements WebFilter {
                 .switchIfEmpty(Mono.defer(() -> clientFactory.execute(context)) // 调用服务
                         .map(context::setResponseEntity)                        // 设置response
                         // 执行response 插件 然后输出结果
-                        .flatMap(ctx -> pluginManager.handleResponse(ctx).flatMap(rr -> responseData(context))));
+                        .flatMap(ctx -> pluginManager.handleResponse(ctx).flatMap(r -> responseData(context))));
     }
 
     /**
